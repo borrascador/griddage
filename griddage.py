@@ -1,16 +1,23 @@
-# Jan Tabaczynski
-# January 1, 2016
-# Griddage Game
-# griddage.py
+from kivy.app import App
+from kivy.uix.gridlayout import GridLayout
+from kivy.properties import DictProperty
 
-'''This script allows two players to take turns at a game of Griddage.'''
 
-import sys, pygame
-pygame.init()
 
-size = width, height = 1080, 960
+class BoardDisplay(GridLayout):
+    grid = DictProperty( { (x, y): 'back1' \
+                           for x in range(1,6) for y in range(1,6) }
+    )
 
-screen = pygame.display.set_mode(size)
+    def flip_card(self, x, y):
+        self.grid[(x,y)] = 's3r1'
 
-for event in pygame.event.get():
-    if event.type == pygame.quit(): sys.exit()
+
+
+class GriddageApp(App):
+    
+    def build(self):
+        return BoardDisplay()
+
+if __name__ == '__main__':
+    GriddageApp().run()
