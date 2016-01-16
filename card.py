@@ -3,6 +3,7 @@ class Card:
     def __init__(self, suit=0, rank=1):
         self.suit = suit
         self.rank = rank
+        self.path = 'cards/s{}r{}.png'.format(self.suit, self.rank)
 
     def __str__(self):
         return 's{}r{}'.format(self.suit, self.rank)
