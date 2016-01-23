@@ -1,15 +1,3 @@
-
-'''A kivy layout with a set number of rows and columns, whose children
-are positioned according to their `row` and `col` properties if they
-exist. If they do not have these properties, they default to the
-zeroth row and column.
-SparseGridLayout is *not* a subclass of GridLayout, but is instead a
-FloatLayout subclass to avoid filling a GridLayout with empty widgets
-(and having to manage all their positions). If your grid is densely
-populated, or if you want certain finer control over widget sizing,
-you may find a GridLayout more convenient.
-'''
-
 from kivy.app import App
 
 from kivy.uix.floatlayout import FloatLayout
@@ -35,29 +23,26 @@ class GreenButton(Button, GridEntry):
 
 class CardImage(Image, GridEntry, Card):
     pass
-##    def __str__(self):
-##        return self.path
 
 class PlayerHand(Image, GridEntry):
     source = StringProperty('cards/back1.png')
 
-class Anim(Animation, GridEntry):
+class Animate(Animation, GridEntry):
     pass
 
-game = Game()
 
-class SparseGridLayout(FloatLayout):
+
+class Board(FloatLayout):
 
     rows = NumericProperty(1)
     columns = NumericProperty(1)
     shape = ReferenceListProperty(rows, columns)
 
     def __init__(self, **kwargs):
-        super(SparseGridLayout, self).__init__(**kwargs)
+        super(Board, self).__init__(**kwargs)
 
-        self.p1 = PlayerHand(xpos=2, ypos=-1, source=game.p1.pop_card().path)
-        self.p2 = PlayerHand(xpos=4, ypos=-1)
-
+        self.game = Game()
+        
         self.cards = {}
         self.current_player = 1
 
@@ -75,16 +60,7 @@ class SparseGridLayout(FloatLayout):
             child.pos_hint = {'x': shape_hint[0] * (child.xpos - 1.),
                               'y': shape_hint[1] * (child.ypos + 1.)}
             
-
-            super(SparseGridLayout, self).do_layout(*args)
-
-    def reposition(self, child, **kwargs):   
-        for prop in ('x', 'y', 'size'):
-            value = kwargs.pop(prop, None)
-            if not value:
-                continue
-            Animation(d=.5, **{prop: value}).start(child)
-
+            super(Board, self).do_layout(*args)
         
     def make_board(self):
         buttons = []
@@ -95,19 +71,26 @@ class SparseGridLayout(FloatLayout):
 
         for button in buttons:
             if button.xpos == 3 and button.ypos == 3:
-                starter = CardImage(xpos=3, ypos=3, source=game.starter.path)
+                starter = CardImage(xpos=3, ypos=3, \
+                                    suit=self.game.starter.suit, \
+                                    rank=self.game.starter.rank, \
+                                    source=self.game.starter.source)
                 self.add_widget(starter)
                 self.cards[(3,3)] = starter
             else:
                 self.add_widget(button)
                 button.bind(on_release=self.place_card)
 
+        self.p1 = PlayerHand(xpos=2, ypos=-1, \
+                             source=self.game.p1.pop_card().source)
+        self.p2 = PlayerHand(xpos=4, ypos=-1)
+
         self.add_widget(self.p1)
         self.add_widget(self.p2)
 
     def animate(self, instance, coords):
-        anim  = Anim(xpos=coords[0], y=0, duration=0.75)
-        anim &= Anim(ypos=coords[1], x=0, duration=0.75)
+        anim  = Animate(xpos=coords[0], y=0, duration=0.75)
+        anim &= Animate(ypos=coords[1], x=0, duration=0.75)
         anim.start(instance)
 
     def place_card(self, button):
@@ -125,35 +108,32 @@ class SparseGridLayout(FloatLayout):
         self.animate(self.cards[coords], coords)
         self.remove_widget(button)
 
-        if len(self.cards) == 25:
-            print [str(card) for card in self.cards.values()]
-
         return self.cards
 
     def choose_card(self):
         if self.current_player == 1:
             next_card = self.p1.source
-            if len(game.p1.cards) == 0:
+            if len(self.game.p1.cards) == 0:
                 self.remove_widget(self.p1)
-                self.p2.source = game.p2.pop_card().path
+                self.p2.source = self.game.p2.pop_card().source
             else:
                 self.p1.source = 'cards/back1.png'
-                self.p2.source = game.p2.pop_card().path   
+                self.p2.source = self.game.p2.pop_card().source  
             self.current_player = 2
             return next_card
         
         if self.current_player == 2:
             next_card = self.p2.source
-            if len(game.p2.cards) == 0:
+            if len(self.game.p2.cards) == 0:
                 self.remove_widget(self.p2)
             else:
-                self.p1.source = game.p1.pop_card().path
+                self.p1.source = self.game.p1.pop_card().source
                 self.p2.source = 'cards/back1.png'
             self.current_player = 1
             return next_card
     
-    def make_coords(self, button):
-        return '({}, {})'.format(button.xpos, button.ypos)
+##    def make_coords(self, button):
+##        return '({}, {})'.format(button.xpos, button.ypos)
         
 class GriddageGame():
     def __init__(self, players=2):
@@ -163,7 +143,7 @@ class GriddageGame():
 
 class GriddageApp(App):
     def build(self):
-        board = SparseGridLayout(rows=7, columns=5)
+        board = Board(rows=7, columns=5)
         return board
 
 if __name__ == "__main__":

@@ -3,8 +3,11 @@ class Card:
     def __init__(self, suit=0, rank=1):
         self.suit = suit
         self.rank = rank
-        self.path = 'cards/s{}r{}.png'.format(self.suit, self.rank)
-
+        if suit != None and rank != None:
+            self.source = 'cards/s{}r{}.png'.format(self.suit, self.rank)
+        else:
+            self.source = 'cards/back1.png'
+            
     def __str__(self):
         return 's{}r{}'.format(self.suit, self.rank)
 
@@ -47,7 +50,7 @@ class Deck:
 
 
 
-class Hand(Deck):
+class Hand():
 
     def __init__(self, name=""):
         self.cards = []
@@ -60,13 +63,16 @@ class Hand(Deck):
         if len(self.cards) > 0:
             return self.cards.pop()
 
+    def is_empty(self):
+        return (len(self.cards) == 0)
+
     def __str__(self):
         s = "Hand " + self.name
         if self.is_empty():
             return s + " is empty\n"
         else:
             return s + " contains\n" + Deck.__str__(self)
-
+    
 
 
 class Game:
