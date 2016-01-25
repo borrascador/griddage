@@ -1,16 +1,17 @@
+import kivy
+kivy.require('1.9.1')
+
 from kivy.app import App
 
 from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.button import Button
 from kivy.uix.image import Image
+from kivy.animation import Animation
 from kivy.event import EventDispatcher
-
 from kivy.properties import \
      NumericProperty, ReferenceListProperty, StringProperty
 
-from kivy.animation import Animation
-
-from card import Card, Hand, Game
+from card import Card, Deck
 
 
 
@@ -21,12 +22,55 @@ class GridEntry(EventDispatcher):
 class GreenButton(Button, GridEntry):
     pass
 
-class CardImage(Image, GridEntry, Card):
-    pass
+class CardSource(EventDispatcher):
+    source = StringProperty()
 
-class PlayerHand(Image, GridEntry):
-    source = StringProperty('cards/back1.png')
+class CardImage(Image, GridEntry, CardSource, Card):
+    def __init__(self, xpos, ypos, card, face_down=True):
+        super(CardImage, self).__init__()
+        self.xpos, self.ypos = xpos, ypos
+        self.card = card
+        self.suit, self.rank = card.suit, card.rank
+        self.source = card.source
+        self.face_down = face_down
+        if self.face_down:
+            self.flip()
+            
+    def flip(self):
+        if self.face_down == True:
+            self.face_down = False
+            self.source = 'cards/back1.png'
+        else:
+            self.face_down = True
+            self.source = self.card.source
 
+class HandWidget:
+    def __init__(self, name, xpos=3, ypos=-1):
+        self.cards = []
+        self.name = name
+        self.xpos, self.ypos = xpos, ypos
+        
+    def add_card(self, card):
+        card_image = CardImage(xpos=self.xpos, ypos=self.ypos, card=card)
+        self.cards.append(card_image)
+
+    def pop_card(self):
+        if len(self.cards) > 0:
+            return self.cards.pop()
+
+    def is_empty(self):
+        return (len(self.cards) == 0)
+
+class Game:
+    def __init__(self, players):
+        self.deck = Deck()
+        self.deck.shuffle()
+        if len(players) == 2:
+            self.hands = [HandWidget(players[0], xpos=2, ypos=-1), \
+                          HandWidget(players[1], xpos=4, ypos=-1)]
+        self.deck.deal(self.hands)
+        self.starter = self.deck.pop_card()
+         
 class Animate(Animation, GridEntry):
     pass
 
@@ -41,7 +85,7 @@ class Board(FloatLayout):
     def __init__(self, **kwargs):
         super(Board, self).__init__(**kwargs)
 
-        self.game = Game()
+        self.game = Game(['Anna', 'Jan'])
         
         self.cards = {}
         self.current_player = 1
@@ -72,73 +116,53 @@ class Board(FloatLayout):
         for button in buttons:
             if button.xpos == 3 and button.ypos == 3:
                 starter = CardImage(xpos=3, ypos=3, \
-                                    suit=self.game.starter.suit, \
-                                    rank=self.game.starter.rank, \
-                                    source=self.game.starter.source)
+                                    card=self.game.starter, face_down=False)
                 self.add_widget(starter)
                 self.cards[(3,3)] = starter
             else:
                 self.add_widget(button)
                 button.bind(on_release=self.place_card)
 
-        self.p1 = PlayerHand(xpos=2, ypos=-1, \
-                             source=self.game.p1.pop_card().source)
-        self.p2 = PlayerHand(xpos=4, ypos=-1)
+        if len(self.game.hands) == 2:
+            self.p1 = self.game.hands[0]
+            for card in self.p1.cards:
+                self.add_widget(card)
+            self.p1.cards[-1].flip()
 
-        self.add_widget(self.p1)
-        self.add_widget(self.p2)
+            self.p2 = self.game.hands[1]
+            for card in self.p2.cards:
+                self.add_widget(card)
 
     def animate(self, instance, coords):
         anim  = Animate(xpos=coords[0], y=0, duration=0.75)
         anim &= Animate(ypos=coords[1], x=0, duration=0.75)
         anim.start(instance)
-
+        
     def place_card(self, button):
-        next_card = self.choose_card()
-        
         coords = (button.xpos, button.ypos)
+        
         if self.current_player == 1:
-            self.cards[coords] = CardImage(xpos=4, ypos=-1,
-                                           source=next_card)
-        if self.current_player == 2:
-            self.cards[coords] = CardImage(xpos=2, ypos=-1,
-                                           source=next_card)
-
-        self.add_widget(self.cards[coords])
-        self.animate(self.cards[coords], coords)
-        self.remove_widget(button)
-
-        return self.cards
-
-    def choose_card(self):
-        if self.current_player == 1:
-            next_card = self.p1.source
-            if len(self.game.p1.cards) == 0:
-                self.remove_widget(self.p1)
-                self.p2.source = self.game.p2.pop_card().source
-            else:
-                self.p1.source = 'cards/back1.png'
-                self.p2.source = self.game.p2.pop_card().source  
+            self.cards[coords] = self.p1.pop_card()
+            self.animate(self.cards[coords], coords)
+            self.remove_widget(button)
+            
+            if not self.p2.is_empty():
+                self.p2.cards[-1].flip()
+                
             self.current_player = 2
-            return next_card
-        
-        if self.current_player == 2:
-            next_card = self.p2.source
-            if len(self.game.p2.cards) == 0:
-                self.remove_widget(self.p2)
-            else:
-                self.p1.source = self.game.p1.pop_card().source
-                self.p2.source = 'cards/back1.png'
-            self.current_player = 1
-            return next_card
-    
-##    def make_coords(self, button):
-##        return '({}, {})'.format(button.xpos, button.ypos)
-        
-class GriddageGame():
-    def __init__(self, players=2):
-        print players
+            return self.cards
 
+        if self.current_player == 2:
+            self.cards[coords] = self.p2.pop_card()
+            self.animate(self.cards[coords], coords)
+            self.remove_widget(button)
+            
+            if not self.p1.is_empty():
+                self.p1.cards[-1].flip()
+                
+            self.current_player = 1
+            return self.cards
+        
 
 
 class GriddageApp(App):

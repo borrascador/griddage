@@ -1,5 +1,4 @@
 class Card:
-   
     def __init__(self, suit=0, rank=1):
         self.suit = suit
         self.rank = rank
@@ -7,7 +6,7 @@ class Card:
             self.source = 'cards/s{}r{}.png'.format(self.suit, self.rank)
         else:
             self.source = 'cards/back1.png'
-            
+
     def __str__(self):
         return 's{}r{}'.format(self.suit, self.rank)
 
@@ -47,46 +46,3 @@ class Deck:
             card = self.pop_card()       # take the top card
             hand = hands[i % nHands]     # whose turn is next?
             hand.add_card(card)          # add the card to the hand
-
-
-
-class Hand():
-
-    def __init__(self, name=""):
-        self.cards = []
-        self.name = name
-
-    def add_card(self, card):
-        self.cards.append(card)
-
-    def pop_card(self):
-        if len(self.cards) > 0:
-            return self.cards.pop()
-
-    def is_empty(self):
-        return (len(self.cards) == 0)
-
-    def __str__(self):
-        s = "Hand " + self.name
-        if self.is_empty():
-            return s + " is empty\n"
-        else:
-            return s + " contains\n" + Deck.__str__(self)
-    
-
-
-class Game:
-    
-    def __init__(self):
-        self.deck = Deck()
-        self.deck.shuffle()
-        self.p1 = Hand('Anna')
-        self.p2 = Hand('Jan')
-        self.deck.deal([self.p1, self.p2])
-        self.starter = self.deck.pop_card()
-##        print self.p1
-##        print self.p2
-##        print self.starter
-
-if __name__ == '__main__':
-    game = Game()

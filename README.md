@@ -13,7 +13,11 @@ points.
 ## Implemented
 
  - Animate cards moving from hand to chosen grid tile.
-
+ - Eliminate the show_card function.
+ - Streamline CardImage, Hand, and Game classes for better 
+   integration with rest of program. Makes generalizing the 
+   game into other modes, card logic, and scoring function 
+   easier to implement.
 
 ## Wishlist
 
@@ -25,7 +29,6 @@ points.
    manual and also difficulty level of 'muggsy' rule.
  - Generalize functions to allow for solitaire mode, player 
    vs computer, player vs player, and 2 vs 2.
- - Especially the show_card function.
  - Consider placement of decks to allow for above use cases, 
    e.g. player1 has deck on bottom and player2 has deck on 
    top, but only bottom deck appears in one player game, as  
