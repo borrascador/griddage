@@ -19,11 +19,17 @@ class GridEntry(EventDispatcher):
     xpos = NumericProperty(0)
     ypos = NumericProperty(0)
 
+class CardSource(EventDispatcher):
+    source = StringProperty()
+
+class CardGrid(EventDispatcher):
+    pass
+
 class GreenButton(Button, GridEntry):
     pass
 
-class CardSource(EventDispatcher):
-    source = StringProperty()
+class Animate(Animation, GridEntry):
+    pass
 
 class CardImage(Image, GridEntry, CardSource, Card):
     def __init__(self, xpos, ypos, card, face_down=True):
@@ -65,14 +71,24 @@ class Game:
     def __init__(self, players):
         self.deck = Deck()
         self.deck.shuffle()
-        if len(players) == 2:
-            self.hands = [HandWidget(players[0], xpos=2, ypos=-1), \
-                          HandWidget(players[1], xpos=4, ypos=-1)]
+        self.hands = self.make_hands(players)
         self.deck.deal(self.hands)
         self.starter = self.deck.pop_card()
-         
-class Animate(Animation, GridEntry):
-    pass
+
+        self.cards = {}
+        self.current_player = 1
+
+    def make_hands(self, players):
+        if len(players) == 1:
+            return [HandWidget(players[0], xpos=3, ypos=-1)]
+        if len(players) == 2:
+            return [HandWidget(players[0], xpos=2, ypos=-1), \
+                    HandWidget(players[1], xpos=4, ypos=-1)]
+        if len(players) == 4:
+            return [HandWidget(players[0], xpos=2, ypos=-1), \
+                    HandWidget(players[1], xpos=4, ypos=-1), \
+                    HandWidget(players[2], xpos=1, ypos=-1), \
+                    HandWidget(players[3], xpos=5, ypos=-1)]
 
 
 
@@ -87,9 +103,6 @@ class Board(FloatLayout):
 
         self.game = Game(['Anna', 'Jan'])
         
-        self.cards = {}
-        self.current_player = 1
-
         self.make_board()
 
     def do_layout(self, *args):
@@ -118,7 +131,7 @@ class Board(FloatLayout):
                 starter = CardImage(xpos=3, ypos=3, \
                                     card=self.game.starter, face_down=False)
                 self.add_widget(starter)
-                self.cards[(3,3)] = starter
+                self.game.cards[(3,3)] = starter
             else:
                 self.add_widget(button)
                 button.bind(on_release=self.place_card)
@@ -137,31 +150,37 @@ class Board(FloatLayout):
         anim  = Animate(xpos=coords[0], y=0, duration=0.75)
         anim &= Animate(ypos=coords[1], x=0, duration=0.75)
         anim.start(instance)
+
+    def bring_to_front(self, card):
+        self.remove_widget(card)
+        self.add_widget(card)
         
     def place_card(self, button):
         coords = (button.xpos, button.ypos)
         
-        if self.current_player == 1:
-            self.cards[coords] = self.p1.pop_card()
-            self.animate(self.cards[coords], coords)
+        if self.game.current_player == 1:
+            self.game.cards[coords] = self.p1.pop_card()
+            self.bring_to_front(self.game.cards[coords])
+            self.animate(self.game.cards[coords], coords)
             self.remove_widget(button)
             
             if not self.p2.is_empty():
                 self.p2.cards[-1].flip()
                 
-            self.current_player = 2
-            return self.cards
+            self.game.current_player = 2
+            return self.game.cards
 
-        if self.current_player == 2:
-            self.cards[coords] = self.p2.pop_card()
-            self.animate(self.cards[coords], coords)
+        if self.game.current_player == 2:
+            self.game.cards[coords] = self.p2.pop_card()
+            self.bring_to_front(self.game.cards[coords])
+            self.animate(self.game.cards[coords], coords)
             self.remove_widget(button)
             
             if not self.p1.is_empty():
                 self.p1.cards[-1].flip()
                 
-            self.current_player = 1
-            return self.cards
+            self.game.current_player = 1
+            return self.game.cards
         
 
 
