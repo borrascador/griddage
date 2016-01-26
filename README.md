@@ -18,6 +18,12 @@ points.
    integration with rest of program. Makes generalizing the 
    game into other modes, card logic, and scoring function 
    easier to implement.
+ - Generalize functions to allow for solitaire mode, player 
+   vs computer, player vs player, and 2 vs 2.
+ - Consider placement of decks to allow for above use cases, 
+   e.g. player1 has deck on bottom and player2 has deck on 
+   top, but only bottom deck appears in one player game, as  
+   well as a corresponding change for four player mode.
 
 ## Wishlist
 
@@ -27,15 +33,10 @@ points.
    scoring.
  - Allow for different scoring options. Include auto vs 
    manual and also difficulty level of 'muggsy' rule.
- - Generalize functions to allow for solitaire mode, player 
-   vs computer, player vs player, and 2 vs 2.
- - Consider placement of decks to allow for above use cases, 
-   e.g. player1 has deck on bottom and player2 has deck on 
-   top, but only bottom deck appears in one player game, as  
-   well as a corresponding change for four player mode.
  - Add option to change card backs.
  - Add multiple screens using screen manager, such as title 
    screen, options screen, credits screen, game screen, game 
    over screen, and possible a scoring screen.
  - Perhaps a 'chessmaster' can be added to top of screen in 
    player vs computer mode? And avatars for player vs player.
+ - Pegboard for keeping score along one side of the screen

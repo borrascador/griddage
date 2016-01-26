@@ -10,7 +10,7 @@ from kivy.animation import Animation
 from kivy.event import EventDispatcher
 from kivy.properties import \
      NumericProperty, ReferenceListProperty, StringProperty
-
+from itertools import cycle
 from card import Card, Deck
 
 
@@ -25,7 +25,7 @@ class CardSource(EventDispatcher):
 class CardGrid(EventDispatcher):
     pass
 
-class GreenButton(Button, GridEntry):
+class GridButton(Button, GridEntry):
     pass
 
 class Animate(Animation, GridEntry):
@@ -76,7 +76,9 @@ class Game:
         self.starter = self.deck.pop_card()
 
         self.cards = {}
-        self.current_player = 1
+
+        self.turn = self.cycler()
+        self.current_player = self.turn.next()
 
     def make_hands(self, players):
         if len(players) == 1:
@@ -90,6 +92,10 @@ class Game:
                     HandWidget(players[2], xpos=1, ypos=-1), \
                     HandWidget(players[3], xpos=5, ypos=-1)]
 
+    def cycler(self):
+        for player in cycle(self.hands):
+            yield player
+
 
 
 class Board(FloatLayout):
@@ -101,7 +107,9 @@ class Board(FloatLayout):
     def __init__(self, **kwargs):
         super(Board, self).__init__(**kwargs)
 
+##        self.game = Game(['Anna'])
         self.game = Game(['Anna', 'Jan'])
+##        self.game = Game(['Anna', 'Jan', 'Garrett', 'Johno'])
         
         self.make_board()
 
@@ -110,9 +118,9 @@ class Board(FloatLayout):
         for child in self.children:
             child.size_hint = (0.95 / self.columns, 0.95 / self.rows)
             if not hasattr(child, 'xpos'):
-                child.xpos = 1
+                child.xpos = 0
             if not hasattr(child, 'ypos'):
-                child.ypos = 1
+                child.ypos = 0
 
             child.pos_hint = {'x': shape_hint[0] * (child.xpos - 1.),
                               'y': shape_hint[1] * (child.ypos + 1.)}
@@ -123,64 +131,45 @@ class Board(FloatLayout):
         buttons = []
         for i in range(1,6):
             for j in range(1,6):
-                button = GreenButton(xpos=i, ypos=j)
+                button = GridButton(xpos=i, ypos=j, opacity=0)
                 buttons.append(button)
 
         for button in buttons:
             if button.xpos == 3 and button.ypos == 3:
                 starter = CardImage(xpos=3, ypos=3, \
-                                    card=self.game.starter, face_down=False)
+                                    card=self.game.starter, face_down=False)    
                 self.add_widget(starter)
                 self.game.cards[(3,3)] = starter
             else:
                 self.add_widget(button)
                 button.bind(on_release=self.place_card)
 
-        if len(self.game.hands) == 2:
-            self.p1 = self.game.hands[0]
-            for card in self.p1.cards:
-                self.add_widget(card)
-            self.p1.cards[-1].flip()
-
-            self.p2 = self.game.hands[1]
-            for card in self.p2.cards:
-                self.add_widget(card)
+        for hand in self.game.hands:
+            for card in hand.cards:
+                self.add_widget(card)            
+        self.game.current_player.cards[-1].flip()
 
     def animate(self, instance, coords):
-        anim  = Animate(xpos=coords[0], y=0, duration=0.75)
-        anim &= Animate(ypos=coords[1], x=0, duration=0.75)
+        anim  = Animate(xpos=coords[0], y=-5, duration=0.75)
+        anim &= Animate(ypos=coords[1], x=-5, duration=0.75)
         anim.start(instance)
 
     def bring_to_front(self, card):
         self.remove_widget(card)
         self.add_widget(card)
-        
+
     def place_card(self, button):
         coords = (button.xpos, button.ypos)
-        
-        if self.game.current_player == 1:
-            self.game.cards[coords] = self.p1.pop_card()
-            self.bring_to_front(self.game.cards[coords])
-            self.animate(self.game.cards[coords], coords)
-            self.remove_widget(button)
-            
-            if not self.p2.is_empty():
-                self.p2.cards[-1].flip()
-                
-            self.game.current_player = 2
-            return self.game.cards
 
-        if self.game.current_player == 2:
-            self.game.cards[coords] = self.p2.pop_card()
-            self.bring_to_front(self.game.cards[coords])
-            self.animate(self.game.cards[coords], coords)
-            self.remove_widget(button)
+        self.game.cards[coords] = self.game.current_player.pop_card()
+        self.bring_to_front(self.game.cards[coords])
+        self.animate(self.game.cards[coords], coords)
+        self.remove_widget(button)
             
-            if not self.p1.is_empty():
-                self.p1.cards[-1].flip()
-                
-            self.game.current_player = 1
-            return self.game.cards
+        self.game.current_player = self.game.turn.next()
+
+        if not self.game.current_player.is_empty():
+            self.game.current_player.cards[-1].flip()
         
 
 
@@ -190,4 +179,4 @@ class GriddageApp(App):
         return board
 
 if __name__ == "__main__":
-    GriddageApp().run()                    
+    GriddageApp().run()
