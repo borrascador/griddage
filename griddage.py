@@ -7,9 +7,11 @@ from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.button import Button
 from kivy.uix.image import Image
 from kivy.animation import Animation
+from kivy.graphics import Color, Rectangle
 from kivy.event import EventDispatcher
 from kivy.properties import \
-     NumericProperty, ReferenceListProperty, StringProperty
+     NumericProperty, ReferenceListProperty, StringProperty, ObjectProperty
+
 from itertools import cycle
 from card import Card, Deck
 
@@ -21,9 +23,6 @@ class GridEntry(EventDispatcher):
 
 class CardSource(EventDispatcher):
     source = StringProperty()
-
-class CardGrid(EventDispatcher):
-    pass
 
 class GridButton(Button, GridEntry):
     pass
@@ -104,6 +103,7 @@ class Board(FloatLayout):
     columns = NumericProperty(1)
     shape = ReferenceListProperty(rows, columns)
 
+                 
     def __init__(self, **kwargs):
         super(Board, self).__init__(**kwargs)
 
@@ -113,10 +113,74 @@ class Board(FloatLayout):
         
         self.make_board()
 
+        with self.canvas.before:
+            Color(0, 1, 0, 0.3)
+            self.rect1 = Rectangle(size=self.size, pos=self.pos)
+            self.rect2 = Rectangle(size=self.size, pos=self.pos)
+            self.rect3 = Rectangle(size=self.size, pos=self.pos)
+            self.rect4 = Rectangle(size=self.size, pos=self.pos)
+            self.rect5 = Rectangle(size=self.size, pos=self.pos)
+        self.bind(pos=self.update_rect, size=self.update_rect)
+
+    def update_rect(self, *args):
+        
+        if self.game.current_player == self.game.hands[0]:
+            self.rect1.pos  = [0, \
+                               (self.height - 5 * (self.height/self.rows))]
+            self.rect1.size = [0.95 * (self.width / self.columns), \
+                               5 * (self.height / self.rows)]
+            
+            self.rect2.pos  = [1 * (self.width / self.columns), \
+                               (self.height - 5 * (self.height/self.rows))]
+            self.rect2.size = [0.95 * (self.width / self.columns), \
+                               5 * (self.height / self.rows)]
+            
+            self.rect3.pos  = [2 * (self.width / self.columns), \
+                               (self.height - 5 * (self.height/self.rows))]
+            self.rect3.size = [0.95 * (self.width / self.columns), \
+                               5 * (self.height / self.rows)]
+            
+            self.rect4.pos  = [3 * (self.width / self.columns), \
+                               (self.height - 5 * (self.height/self.rows))]
+            self.rect4.size = [0.95 * (self.width / self.columns), \
+                               5 * (self.height / self.rows)]
+            
+            self.rect5.pos  = [4 * (self.width / self.columns), \
+                               (self.height - 5 * (self.height/self.rows))]
+            self.rect5.size = [0.95 * (self.width / self.columns), \
+                               5 * (self.height / self.rows)]
+            
+        if self.game.current_player == self.game.hands[1]:
+            self.rect1.pos  = [0, \
+                               (self.height - 1 * (self.height/self.rows))]
+            self.rect1.size = [self.width, \
+                               0.95 * (self.height / self.rows)]
+            
+            self.rect2.pos  = [0, \
+                               (self.height - 2 * (self.height/self.rows))]
+            self.rect2.size = [self.width, \
+                               0.95 * (self.height / self.rows)]
+            
+            self.rect3.pos  = [0, \
+                               (self.height - 3 * (self.height/self.rows))]
+            self.rect3.size = [self.width, \
+                               0.95 * (self.height / self.rows)]
+            
+            self.rect4.pos  = [0, \
+                               (self.height - 4 * (self.height/self.rows))]
+            self.rect4.size = [self.width, \
+                               0.95 * (self.height / self.rows)]
+            
+            self.rect5.pos  = [0, \
+                               (self.height - 5 * (self.height/self.rows))]
+            self.rect5.size = [self.width, \
+                               0.95 * (self.height / self.rows)]
+                        
+
     def do_layout(self, *args):
         shape_hint = (1. / self.columns, 1. / self.rows)
         for child in self.children:
-            child.size_hint = (0.95 / self.columns, 0.95 / self.rows)
+            child.size_hint = (.95 / self.columns, .95 / self.rows)
             if not hasattr(child, 'xpos'):
                 child.xpos = 0
             if not hasattr(child, 'ypos'):
@@ -167,7 +231,8 @@ class Board(FloatLayout):
         self.remove_widget(button)
             
         self.game.current_player = self.game.turn.next()
-
+        self.update_rect()
+        
         if not self.game.current_player.is_empty():
             self.game.current_player.cards[-1].flip()
         
