@@ -12,7 +12,7 @@ from kivy.event import EventDispatcher
 from kivy.properties import \
      NumericProperty, ReferenceListProperty, StringProperty, ObjectProperty
 
-from itertools import cycle
+from itertools import cycle, combinations
 from card import Card, Deck
 
 
@@ -95,7 +95,123 @@ class Game:
         for player in cycle(self.hands):
             yield player
 
+    def score_match(self):
+        coords = self.cards.keys()
+        
+        v_coords=[[(x,y) for (x,y) in coords if x==col] for col in range(1,6)]
+        v_cards =[[self.cards[coord] for coord in col] for col in v_coords]
 
+        v_score = 0
+        
+        for col in v_cards:
+            suits = [card.suit for card in col]
+            ranks = [card.rank for card in col]
+            values= [card.rank if card.rank <= 10 else 10 for card in col]
+            
+            score  = 0
+            
+            score += self.score_fifteens(values)
+            print 'Fifteen score:', self.score_fifteens(values)
+            
+            score += self.score_pairs(ranks)
+            print 'Pair score:', self.score_pairs(ranks)
+            
+            score += self.score_runs(ranks)
+            print 'Run score:', self.score_runs(ranks)
+            
+            score += self.score_flush(suits)
+            print 'Flush score:', self.score_flush(suits)
+            
+            print 'Line score:', score, '\n'
+            v_score += score
+            
+        print 'Total score for player 1:', v_score
+            
+
+
+        h_coords=[[(x,y) for (x,y) in coords if y==row] for row in range(1,6)]
+        h_cards =[[self.cards[coord] for coord in row] for row in h_coords]
+
+        h_score = 0
+        
+        for row in h_cards:
+            suits = [card.suit for card in row]
+            ranks = [card.rank for card in row]
+            values= [card.rank if card.rank <= 10 else 10 for card in row]
+            
+            score  = 0
+            
+            score += self.score_fifteens(values)
+            print 'Fifteen score:', self.score_fifteens(values)
+            
+            score += self.score_pairs(ranks)
+            print 'Pair score:', self.score_pairs(ranks)
+            
+            score += self.score_runs(ranks)
+            print 'Run score:', self.score_runs(ranks)
+            
+            score += self.score_flush(suits)
+            print 'Flush score:', self.score_flush(suits)
+            
+            print 'Line score:', score, '\n'
+            h_score += score
+            
+        print 'Total score for player 2:', h_score
+
+        if v_score > h_score:
+            print '\n', 'Player 1 wins!'
+        elif h_score > v_score:
+            print '\n', 'Player 2 wins!'
+        else:
+            print 'Tie Game!'
+
+    def score_fifteens(self, values):
+        fifteens = 0
+        for combo_length in range(1,6):
+            for combo in combinations(values, combo_length):
+                if sum(combo) == 15:
+                    fifteens += 1
+        score = 2 * fifteens
+        return score
+
+    def score_pairs(self, ranks):
+        pairs = 0
+        for combo in combinations(ranks, 2):
+            if combo[0]==combo[1]:
+                pairs += 1
+        score = 2 * pairs
+        return score
+
+    def score_runs(self, ranks):
+        run_length = 0
+        for combo_length in range(5, 2, -1):
+            for combo in combinations(ranks, combo_length):
+                combo = sorted(combo)
+                if self.is_run(combo):
+                    run_length += combo_length
+            if run_length > 0:
+                break
+        return run_length
+
+    def is_run(self, combo):
+        if len(combo) == 1:
+            return True
+        if combo[0] + 1 == combo[1]:
+            return self.is_run(combo[1:])
+        else:
+            return False
+
+    def score_flush(self, suits):
+        if len(set(suits)) == 1:
+            score = 5
+        else:
+            score = 0
+        return score
+
+    def is_game_over(self):
+        return len(self.cards) == 25
+
+        
 
 class Board(FloatLayout):
 
@@ -107,12 +223,6 @@ class Board(FloatLayout):
     def __init__(self, **kwargs):
         super(Board, self).__init__(**kwargs)
 
-##        self.game = Game(['Anna'])
-        self.game = Game(['Anna', 'Jan'])
-##        self.game = Game(['Anna', 'Jan', 'Garrett', 'Johno'])
-        
-        self.make_board()
-
         with self.canvas.before:
             Color(0, 0.9, 0, 0.3)
             self.rects = [Rectangle(size=self.size, pos=self.pos), \
@@ -121,6 +231,12 @@ class Board(FloatLayout):
                           Rectangle(size=self.size, pos=self.pos), \
                           Rectangle(size=self.size, pos=self.pos)]
             self.bind(pos=self.update_rect, size=self.update_rect)
+
+##        self.game = Game(['Anna'])
+        self.game = Game(['Anna', 'Jan'])
+##        self.game = Game(['Anna', 'Jan', 'Garrett', 'Johno'])
+        
+        self.make_board()
 
     def update_rect(self, *args):
         UNIT_WIDTH  = self.width / self.columns
@@ -139,7 +255,7 @@ class Board(FloatLayout):
             for rect in self.rects:
                 new_pos = v_pos.next()
                 rect.pos  = [0, (self.height - new_pos * UNIT_HEIGHT)]
-                rect.size = [self.width, (0.9 * UNIT_HEIGHT)]                        
+                rect.size = [self.width, (0.9 * UNIT_HEIGHT)]                     
 
     def do_layout(self, *args):
         shape_hint = (1. / self.columns, 1. / self.rows)
@@ -199,6 +315,9 @@ class Board(FloatLayout):
         
         if not self.game.current_player.is_empty():
             self.game.current_player.cards[-1].flip()
+
+        if self.game.is_game_over():
+            self.game.score_match()
         
 
 
