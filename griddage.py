@@ -114,68 +114,32 @@ class Board(FloatLayout):
         self.make_board()
 
         with self.canvas.before:
-            Color(0, 1, 0, 0.3)
-            self.rect1 = Rectangle(size=self.size, pos=self.pos)
-            self.rect2 = Rectangle(size=self.size, pos=self.pos)
-            self.rect3 = Rectangle(size=self.size, pos=self.pos)
-            self.rect4 = Rectangle(size=self.size, pos=self.pos)
-            self.rect5 = Rectangle(size=self.size, pos=self.pos)
-        self.bind(pos=self.update_rect, size=self.update_rect)
+            Color(0, 0.9, 0, 0.3)
+            self.rects = [Rectangle(size=self.size, pos=self.pos), \
+                          Rectangle(size=self.size, pos=self.pos), \
+                          Rectangle(size=self.size, pos=self.pos), \
+                          Rectangle(size=self.size, pos=self.pos), \
+                          Rectangle(size=self.size, pos=self.pos)]
+            self.bind(pos=self.update_rect, size=self.update_rect)
 
     def update_rect(self, *args):
-        
+        UNIT_WIDTH  = self.width / self.columns
+        UNIT_HEIGHT = self.height / self.rows
+        v_pos = iter(range(4))
         if self.game.current_player == self.game.hands[0]:
-            self.rect1.pos  = [0, \
-                               (self.height - 5 * (self.height/self.rows))]
-            self.rect1.size = [0.95 * (self.width / self.columns), \
-                               5 * (self.height / self.rows)]
-            
-            self.rect2.pos  = [1 * (self.width / self.columns), \
-                               (self.height - 5 * (self.height/self.rows))]
-            self.rect2.size = [0.95 * (self.width / self.columns), \
-                               5 * (self.height / self.rows)]
-            
-            self.rect3.pos  = [2 * (self.width / self.columns), \
-                               (self.height - 5 * (self.height/self.rows))]
-            self.rect3.size = [0.95 * (self.width / self.columns), \
-                               5 * (self.height / self.rows)]
-            
-            self.rect4.pos  = [3 * (self.width / self.columns), \
-                               (self.height - 5 * (self.height/self.rows))]
-            self.rect4.size = [0.95 * (self.width / self.columns), \
-                               5 * (self.height / self.rows)]
-            
-            self.rect5.pos  = [4 * (self.width / self.columns), \
-                               (self.height - 5 * (self.height/self.rows))]
-            self.rect5.size = [0.95 * (self.width / self.columns), \
-                               5 * (self.height / self.rows)]
-            
+            h_pos = iter((0,1,2,3,4))
+            for rect in self.rects:
+                new_pos = h_pos.next()
+                rect.pos  = [(new_pos * UNIT_WIDTH), \
+                             (self.height - 5 * UNIT_HEIGHT)]
+                rect.size = [(0.9 * UNIT_WIDTH), (5 * UNIT_HEIGHT)]
+                
         if self.game.current_player == self.game.hands[1]:
-            self.rect1.pos  = [0, \
-                               (self.height - 1 * (self.height/self.rows))]
-            self.rect1.size = [self.width, \
-                               0.95 * (self.height / self.rows)]
-            
-            self.rect2.pos  = [0, \
-                               (self.height - 2 * (self.height/self.rows))]
-            self.rect2.size = [self.width, \
-                               0.95 * (self.height / self.rows)]
-            
-            self.rect3.pos  = [0, \
-                               (self.height - 3 * (self.height/self.rows))]
-            self.rect3.size = [self.width, \
-                               0.95 * (self.height / self.rows)]
-            
-            self.rect4.pos  = [0, \
-                               (self.height - 4 * (self.height/self.rows))]
-            self.rect4.size = [self.width, \
-                               0.95 * (self.height / self.rows)]
-            
-            self.rect5.pos  = [0, \
-                               (self.height - 5 * (self.height/self.rows))]
-            self.rect5.size = [self.width, \
-                               0.95 * (self.height / self.rows)]
-                        
+            v_pos = iter((1,2,3,4,5))
+            for rect in self.rects:
+                new_pos = v_pos.next()
+                rect.pos  = [0, (self.height - new_pos * UNIT_HEIGHT)]
+                rect.size = [self.width, (0.9 * UNIT_HEIGHT)]                        
 
     def do_layout(self, *args):
         shape_hint = (1. / self.columns, 1. / self.rows)
