@@ -24,19 +24,21 @@ points.
    e.g. player1 has deck on bottom and player2 has deck on 
    top, but only bottom deck appears in one player game, as  
    well as a corresponding change for four player mode.
+ - Implement automatic, boring scoring (through console 
+   text) for one deal for two players.
 
 ## Wishlist
 
  - Animate deck shuffling.
- - Implement scoring and restarting game, as well as keeping 
-   track of total score. First boring scoring, then pretty 
-   scoring.
+ - Implement restarting game while keeping track of total 
+   score. 
+ - Add pretty scoring.
  - Allow for different scoring options. Include auto vs 
    manual and also difficulty level of 'muggsy' rule.
  - Add option to change card backs.
  - Add multiple screens using screen manager, such as title 
    screen, options screen, credits screen, game screen, game 
-   over screen, and possible a scoring screen.
+   over screen, and possibly a scoring screen.
  - Perhaps a 'chessmaster' can be added to top of screen in 
    player vs computer mode? And avatars for player vs player.
  - Pegboard for keeping score along one side of the screen
