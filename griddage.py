@@ -76,7 +76,7 @@ class Game:
 
         self.cards = {}
 
-        self.turn = self.cycler()
+        self.turn = self.advance_player()
         self.current_player = self.turn.next()
 
     def make_hands(self, players):
@@ -91,71 +91,21 @@ class Game:
                     HandWidget(players[2], xpos=1, ypos=-1), \
                     HandWidget(players[3], xpos=5, ypos=-1)]
 
-    def cycler(self):
+    def advance_player(self):
         for player in cycle(self.hands):
             yield player
 
     def score_match(self):
         coords = self.cards.keys()
         
-        v_coords=[[(x,y) for (x,y) in coords if x==col] for col in range(1,6)]
-        v_cards =[[self.cards[coord] for coord in col] for col in v_coords]
-
-        v_score = 0
-        
-        for col in v_cards:
-            suits = [card.suit for card in col]
-            ranks = [card.rank for card in col]
-            values= [card.rank if card.rank <= 10 else 10 for card in col]
-            
-            score  = 0
-            
-            score += self.score_fifteens(values)
-            print 'Fifteen score:', self.score_fifteens(values)
-            
-            score += self.score_pairs(ranks)
-            print 'Pair score:', self.score_pairs(ranks)
-            
-            score += self.score_runs(ranks)
-            print 'Run score:', self.score_runs(ranks)
-            
-            score += self.score_flush(suits)
-            print 'Flush score:', self.score_flush(suits)
-            
-            print 'Line score:', score, '\n'
-            v_score += score
-            
+        v_coords= [[(x,y) for (x,y) in coords if x==col] for col in range(1,6)]
+        v_cards = [[self.cards[coord] for coord in col] for col in v_coords]
+        v_score = self.score_player(v_cards)
         print 'Total score for player 1:', v_score
-            
-
-
-        h_coords=[[(x,y) for (x,y) in coords if y==row] for row in range(1,6)]
-        h_cards =[[self.cards[coord] for coord in row] for row in h_coords]
-
-        h_score = 0
         
-        for row in h_cards:
-            suits = [card.suit for card in row]
-            ranks = [card.rank for card in row]
-            values= [card.rank if card.rank <= 10 else 10 for card in row]
-            
-            score  = 0
-            
-            score += self.score_fifteens(values)
-            print 'Fifteen score:', self.score_fifteens(values)
-            
-            score += self.score_pairs(ranks)
-            print 'Pair score:', self.score_pairs(ranks)
-            
-            score += self.score_runs(ranks)
-            print 'Run score:', self.score_runs(ranks)
-            
-            score += self.score_flush(suits)
-            print 'Flush score:', self.score_flush(suits)
-            
-            print 'Line score:', score, '\n'
-            h_score += score
-            
+        h_coords= [[(x,y) for (x,y) in coords if y==row] for row in range(1,6)]
+        h_cards = [[self.cards[coord] for coord in row] for row in h_coords]
+        h_score = self.score_player(h_cards)  
         print 'Total score for player 2:', h_score
 
         if v_score > h_score:
@@ -164,6 +114,20 @@ class Game:
             print '\n', 'Player 2 wins!'
         else:
             print 'Tie Game!'
+
+    def score_player(self, player_cards):
+        player_score = 0
+        for hand in player_cards:
+            suits  = [card.suit for card in hand]
+            ranks  = [card.rank for card in hand]
+            values = [card.rank if card.rank <= 10 else 10 for card in hand]
+            score  = 0
+            score += self.score_fifteens(values)            
+            score += self.score_pairs(ranks)            
+            score += self.score_runs(ranks)       
+            score += self.score_flush(suits)
+            player_score += score
+        return player_score
 
     def score_fifteens(self, values):
         fifteens = 0
@@ -219,11 +183,12 @@ class Board(FloatLayout):
     columns = NumericProperty(1)
     shape = ReferenceListProperty(rows, columns)
 
-                 
     def __init__(self, **kwargs):
         super(Board, self).__init__(**kwargs)
 
         with self.canvas.before:
+            Color(0, 0.7, 0)
+            self.base_rect = Rectangle(size=self.size, pos=self.pos)
             Color(0, 0.9, 0, 0.3)
             self.rects = [Rectangle(size=self.size, pos=self.pos), \
                           Rectangle(size=self.size, pos=self.pos), \
@@ -239,6 +204,9 @@ class Board(FloatLayout):
         self.make_board()
 
     def update_rect(self, *args):
+        self.base_rect.size = self.size
+        self.base_rect.pos  = self.pos
+        
         UNIT_WIDTH  = self.width / self.columns
         UNIT_HEIGHT = self.height / self.rows
         v_pos = iter(range(4))
