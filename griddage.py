@@ -4,9 +4,7 @@ kivy.require('1.9.1')
 from kivy.app import App
 from kivy.uix.screenmanager import Screen, ScreenManager
 from kivy.uix.floatlayout import FloatLayout
-
 from kivy.uix.boxlayout import BoxLayout
-
 from kivy.graphics import Color, Rectangle
 from kivy.animation import Animation
 from kivy.uix.button import Button
@@ -165,9 +163,17 @@ class GameScreen(Screen):
     def __init__(self, **kwargs):
         super(GameScreen, self).__init__(**kwargs)
 
-##        game = Game(['Anna'])
-        self.game = Game(['Anna', 'Jan'])
-##        game = Game(['Anna', 'Jan', 'Garrett', 'Johno'])
+        self.bind(on_pre_enter=self.build)
+
+    def build(self, *args):        
+        if   self.manager.mode == 'Solitaire Mode':
+            self.game = Game(['Anna'])
+        elif self.manager.mode == '2 Player Mode':
+            self.game = Game(['Anna', 'Jan'])
+        elif self.manager.mode == '4 Player Mode':
+            self.game = Game(['Anna', 'Jan', 'Garrett', 'Johno'])
+        else:
+            pass
 
         self.board = Board(rows=7, columns=5, game=self.game)
         self.game.bind(round_over=self.reset)
@@ -211,51 +217,37 @@ class MenuScreen(Screen):
     def make_buttons(self):
         button_names = ['Solitaire Mode', '2 Player Mode', '4 Player Mode',
                         'Settings']
-        
-        self.solo_button  = Button(text='Solitaire Mode',
-                                   pos_hint={'center_x':.5},
-                                   size_hint=(0.9,0.9))
-        self.duel_button  = Button(text='2 Player Mode',
-                                   pos_hint={'center_x':.5},
-                                   size_hint=(0.9,0.9))
-        self.multi_button = Button(text='4 Player Mode',
-                                   pos_hint={'center_x':.5},
-                                   size_hint=(0.9,0.9))
-        self.settings_button = Button(text='Settings',
-                                      pos_hint={'center_x':.5},
-                                      size_hint=(0.9,0.9))
 
-        self.duel_button.bind(on_press=self.change)
-
-        self.menu.add_widget(self.solo_button)
-        self.menu.add_widget(self.duel_button)
-        self.menu.add_widget(self.multi_button)
-        self.menu.add_widget(self.settings_button)
+        for name in button_names:
+            button = Button(text=name, font_size=50, 
+                            pos_hint={'center_x':.5}, size_hint=(0.9,0.9))
+            button.bind(on_press=self.change)
+            self.menu.add_widget(button)
         
     def change(self, button):
-        print(self.manager.mode)
         self.manager.mode = button.text
-        print(self.manager.mode)
         self.manager.current = 'game_screen'
+
+        
 
 class GriddageApp(App):
     def build(self):
-        self.sm = ScreenManager()
+        self.manager = ScreenManager()
 
-        self.sm.mode = 'True'
+        self.manager.mode = 'Initial'
 
         self.menu_screen = MenuScreen(name='menu_screen')
-        self.sm.add_widget(self.menu_screen)
+        self.manager.add_widget(self.menu_screen)
 
         self.game_screen = GameScreen(name='game_screen')
-        self.sm.add_widget(self.game_screen)
+        self.manager.add_widget(self.game_screen)
         
-        return self.sm
+        return self.manager
 
     def start_game(self):
-        self.sm.clear_widgets()
+        self.manager.clear_widgets()
         self.game_screen = GameScreen(name='game_screen')
-        self.sm.add_widget(self.game_screen)
+        self.manager.add_widget(self.game_screen)
 
 if __name__ == "__main__":
     GriddageApp().run()
