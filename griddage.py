@@ -2,17 +2,22 @@ import kivy
 kivy.require('1.9.1')
 
 from kivy.app import App
-
+from kivy.uix.screenmanager import Screen, ScreenManager
 from kivy.uix.floatlayout import FloatLayout
+
+from kivy.uix.boxlayout import BoxLayout
+
 from kivy.graphics import Color, Rectangle
 from kivy.animation import Animation
 from kivy.uix.button import Button
 from kivy.uix.image import Image
-
 from kivy.properties import \
      NumericProperty, ReferenceListProperty, StringProperty, ObjectProperty
 
 from card import Card, Deck, GridEntry, CardImage, Player, Game
+import time
+
+
 
 class GridBlank(Image, GridEntry):
     source = StringProperty('cards/blank.png')
@@ -23,10 +28,13 @@ class GridButton(Button, GridEntry):
 class Animate(Animation, GridEntry):
     pass
 
+
+
 class Board(FloatLayout):
     rows = NumericProperty(1)
     columns = NumericProperty(1)
     shape = ReferenceListProperty(rows, columns)
+    game = ObjectProperty()
 
     def __init__(self, **kwargs):
         super(Board, self).__init__(**kwargs)
@@ -36,25 +44,22 @@ class Board(FloatLayout):
             self.base_rect = Rectangle(size=self.size, pos=self.pos)
 
         with self.canvas.before:
-            Color(1, 0, 0, 1)
+            Color(0, 0, 1, 1)
             self.rects = [Rectangle(size=self.size, pos=self.pos), \
                           Rectangle(size=self.size, pos=self.pos), \
                           Rectangle(size=self.size, pos=self.pos), \
                           Rectangle(size=self.size, pos=self.pos), \
                           Rectangle(size=self.size, pos=self.pos)]
-            self.bind(pos=self.update_background, size=self.update_background)
+            self.bind(size=self.update_background, pos=self.update_background)
 
-##        self.game = Game(['Anna'])
-        self.game = Game(['Anna', 'Jan'])
-##        self.game = Game(['Anna', 'Jan', 'Garrett', 'Johno'])
-        
+        self.game.play_round()
         self.make_board()
 
     def update_background(self, *args):
         self.base_rect.size = self.size
         self.base_rect.pos  = self.pos
         
-        SIZE_FACTOR = .2
+        SIZE_FACTOR = .05
         shape_hint = (self.width / self.columns, self.height / self.rows)
         if self.game.current_player == self.game.players[0]:
             pos_iter = iter((x, 1) for x in range(1,6))
@@ -147,15 +152,110 @@ class Board(FloatLayout):
         if not self.game.current_player.is_empty():
             self.game.current_player.cards[-1].flip()
 
-        if self.game.is_game_over():
-            self.game.score_match()
+        if self.game.is_round_over():
+            self.game.score_round()
+
+            next_button = GridButton(xpos=3, ypos=-1, text='Next round')
+            self.add_widget(next_button)
+            next_button.bind(on_release=self.game.round_over_callback)
+            
+            
+
+class GameScreen(Screen):
+    def __init__(self, **kwargs):
+        super(GameScreen, self).__init__(**kwargs)
+
+##        game = Game(['Anna'])
+        self.game = Game(['Anna', 'Jan'])
+##        game = Game(['Anna', 'Jan', 'Garrett', 'Johno'])
+
+        self.board = Board(rows=7, columns=5, game=self.game)
+        self.game.bind(round_over=self.reset)
+
+        self.add_widget(self.board)
+    
+    def reset(self, *args):
+        self.remove_widget(self.board)
+        self.board = Board(rows=7, columns=5, game=self.game)
+        self.add_widget(self.board)
         
 
 
+class Menu(BoxLayout):
+    def __init__(self, **kwargs):
+        super(Menu, self).__init__(**kwargs)
+        
+        with self.canvas.before:
+            Color(0, 0.6, 0)
+            self.base_rect = Rectangle(size=self.size,
+                                            pos=self.pos)
+            self.bind(size=self.update_background,
+                      pos=self.update_background)
+
+        self.orientation, self.spacing, self.padding = ('vertical', 20, [0, 20])
+
+    def update_background(self, *args):
+        self.base_rect.size = self.size
+        self.base_rect.pos  = self.pos
+        
+
+
+class MenuScreen(Screen):
+    def __init__(self, **kwargs):
+        super(MenuScreen, self).__init__(**kwargs)
+
+        self.menu = Menu()
+        self.add_widget(self.menu)
+        self.make_buttons()
+
+    def make_buttons(self):
+        button_names = ['Solitaire Mode', '2 Player Mode', '4 Player Mode',
+                        'Settings']
+        
+        self.solo_button  = Button(text='Solitaire Mode',
+                                   pos_hint={'center_x':.5},
+                                   size_hint=(0.9,0.9))
+        self.duel_button  = Button(text='2 Player Mode',
+                                   pos_hint={'center_x':.5},
+                                   size_hint=(0.9,0.9))
+        self.multi_button = Button(text='4 Player Mode',
+                                   pos_hint={'center_x':.5},
+                                   size_hint=(0.9,0.9))
+        self.settings_button = Button(text='Settings',
+                                      pos_hint={'center_x':.5},
+                                      size_hint=(0.9,0.9))
+
+        self.duel_button.bind(on_press=self.change)
+
+        self.menu.add_widget(self.solo_button)
+        self.menu.add_widget(self.duel_button)
+        self.menu.add_widget(self.multi_button)
+        self.menu.add_widget(self.settings_button)
+        
+    def change(self, button):
+        print(self.manager.mode)
+        self.manager.mode = button.text
+        print(self.manager.mode)
+        self.manager.current = 'game_screen'
+
 class GriddageApp(App):
     def build(self):
-        board = Board(rows=7, columns=5)
-        return board
+        self.sm = ScreenManager()
+
+        self.sm.mode = 'True'
+
+        self.menu_screen = MenuScreen(name='menu_screen')
+        self.sm.add_widget(self.menu_screen)
+
+        self.game_screen = GameScreen(name='game_screen')
+        self.sm.add_widget(self.game_screen)
+        
+        return self.sm
+
+    def start_game(self):
+        self.sm.clear_widgets()
+        self.game_screen = GameScreen(name='game_screen')
+        self.sm.add_widget(self.game_screen)
 
 if __name__ == "__main__":
     GriddageApp().run()

@@ -1,13 +1,18 @@
 from kivy.uix.image import Image
 from kivy.event import EventDispatcher
 from kivy.properties import \
-     NumericProperty, ReferenceListProperty, StringProperty, ObjectProperty
+    NumericProperty, ReferenceListProperty, StringProperty, ObjectProperty, \
+    BooleanProperty
 
 from itertools import cycle, combinations
+
+
 
 class GridEntry(EventDispatcher):
     xpos = NumericProperty(0)
     ypos = NumericProperty(0)
+
+
 
 class Card:
     def __init__(self, suit=0, rank=1):
@@ -20,6 +25,8 @@ class Card:
 
     def __str__(self):
         return 's{}r{}'.format(self.suit, self.rank)
+
+
 
 class CardImage(Image, GridEntry, Card):
     source = StringProperty()
@@ -40,6 +47,8 @@ class CardImage(Image, GridEntry, Card):
         else:
             self.face_down = True
             self.source = self.card.source
+
+
 
 class Deck:
     def __init__(self):
@@ -75,6 +84,8 @@ class Deck:
             hand = hands[i % nHands]     # whose turn is next?
             hand.add_card(card)          # add the card to the hand
 
+
+
 class Player:
     def __init__(self, name, xpos=3, ypos=-1):
         self.cards = []
@@ -93,18 +104,21 @@ class Player:
     def is_empty(self):
         return (len(self.cards) == 0)
 
-class Game:
+
+
+class GameEvents(EventDispatcher):
+    round_over = BooleanProperty(False)
+    game_over  = BooleanProperty(False)
+    
+
+    
+
+class Game(GameEvents):
     def __init__(self, player_names):
-        self.deck = Deck()
-        self.deck.shuffle()
         self.players = self.set_players(player_names)
-        self.deck.deal(self.players)
-        self.starter = self.deck.pop_card()
-
-        self.cards = {}
-
         self.turn = self.cycle_players()
-        self.current_player = self.turn.next()
+        self.round_over = False
+        self.game_over  = False
 
     def set_players(self, player_names):
         if len(player_names) == 1:
@@ -121,8 +135,32 @@ class Game:
     def cycle_players(self):
         for player in cycle(self.players):
             yield player
+            
+    def play_round(self):
+        self.deck = Deck()
+        self.deck.shuffle()
+        self.deck.deal(self.players)
+        self.starter = self.deck.pop_card()
 
-    def score_match(self):            
+        self.cards = {}
+        self.current_player = self.turn.next()
+
+    def is_round_over(self):
+        return len(self.cards) == 25
+
+    def round_over_callback(self, *args):
+        self.round_over = True
+
+    def is_game_over(self):
+        for player in self.players:
+            if player.score >= 50:
+                return True
+        return False
+
+    def game_over_callback(self, *args):
+        self.game_over = True
+        
+    def score_round(self):            
         coords = self.cards.keys()
         
         v_coords= [[(x,y) for (x,y) in coords if x==col] for col in range(1,6)]
@@ -143,7 +181,7 @@ class Game:
             print 'Tie Game!'
 
     def score_player(self, player_cards):
-        player_score = 0
+        round_score = 0
         for hand in player_cards:
             suits  = [card.suit for card in hand]
             ranks  = [card.rank for card in hand]
@@ -153,8 +191,8 @@ class Game:
             score += self.score_pairs(ranks)            
             score += self.score_runs(ranks)       
             score += self.score_flush(suits)
-            player_score += score
-        return player_score
+            round_score += score
+        return round_score
 
     def score_fifteens(self, values):
         fifteens = 0
@@ -199,8 +237,6 @@ class Game:
         else:
             score = 0
         return score
-
-    def is_game_over(self):
-        return len(self.cards) == 25
+                    
 
 
