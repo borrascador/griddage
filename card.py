@@ -140,6 +140,9 @@ class Game(GameEvents):
         self.deck.deal(self.players)
         self.starter = self.deck.pop_card()
 
+        for player in self.players:
+            print player.score
+
         self.cards = {}
         self.current_player = self.turn.next()
 
@@ -170,9 +173,12 @@ class Game(GameEvents):
         row_coords= [[(x,y) for (x,y) in coords if y==row] for row in range(1,6)]
         row_cards = [[self.cards[coord] for coord in row] for row in row_coords]
         self.row_score = self.score_cards(row_cards)
-        
-        if len(self.players) == 1:
-            self.solo_score = self.col_score + self.row_score
+
+        if len(self.players) > 1:
+            self.players[0].score += self.col_score
+            self.players[1].score += self.row_score
+        else:
+            self.players[0].score = self.col_score + self.row_score
             if self.solo_score < 40:
                 print('You scored %d. You are a worm.' % self.solo_score)
             elif 40 <= self.solo_score < 50:
@@ -202,12 +208,12 @@ class Game(GameEvents):
             suits  = [card.suit for card in hand]
             ranks  = [card.rank for card in hand]
             values = [card.rank if card.rank <= 10 else 10 for card in hand]
-            _score = 0
-            _score+= self.score_fifteens(values)            
-            _score+= self.score_pairs(ranks)            
-            _score+= self.score_runs(ranks)       
-            _score+= self.score_flush(suits)
-            round_score += _score
+            score  = 0
+            score += self.score_fifteens(values)            
+            score += self.score_pairs(ranks)            
+            score += self.score_runs(ranks)       
+            score += self.score_flush(suits)
+            round_score += score
         return round_score
 
     def score_fifteens(self, values):
