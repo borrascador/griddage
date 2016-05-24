@@ -69,15 +69,26 @@ class Board(FloatLayout):
         
         SIZE_FACTOR = .05
         shape_hint = (self.width / self.columns, self.height / self.rows)
-        if self.game.current_player == self.game.players[0] or \
-           self.game.current_player == self.game.players[2]:
-            pos_iter = iter((x, 1) for x in range(1,6))
-            size_iter = iter((1, (5-(1-SIZE_FACTOR))/SIZE_FACTOR) \
-                             for i in range(5))
-        else:
-            pos_iter = iter((1, y) for y in range(1,6))
-            size_iter = iter(((5-(1-SIZE_FACTOR))/SIZE_FACTOR, 1) \
-                             for i in range(5))
+
+        if len(self.game.players) == 2:
+            if self.game.current_player == self.game.players[0]:
+                pos_iter  = iter((x, 1) for x in range(1,6))
+                size_iter = iter((1, (5-(1-SIZE_FACTOR))/SIZE_FACTOR) \
+                                      for i in range(5))
+            else:
+                pos_iter  = iter((1, y) for y in range(1,6))
+                size_iter = iter(((5-(1-SIZE_FACTOR))/SIZE_FACTOR, 1) \
+                                      for i in range(5))
+        elif len(self.game.players) == 4:
+            if self.game.current_player == self.game.players[0] or \
+               self.game.current_player == self.game.players[2]:
+                pos_iter  = iter((x, 1) for x in range(1,6))
+                size_iter = iter((1, (5-(1-SIZE_FACTOR))/SIZE_FACTOR) \
+                                  for i in range(5))
+            else:
+                pos_iter  = iter((1, y) for y in range(1,6))
+                size_iter = iter(((5-(1-SIZE_FACTOR))/SIZE_FACTOR, 1) \
+                                      for i in range(5))
             
         for rect in self.rects:
             pos  = pos_iter.next()
@@ -126,15 +137,48 @@ class Board(FloatLayout):
                 self.add_widget(button)
                 button.bind(on_release=self.place_card)
 
+        if len(self.game.players) == 1:
+            self.solo_label = GridLabel(text='[b]%d[/b]' % \
+                                        self.game.players[0].score,
+                                        markup=True, font_size=20,
+                                        xpos=3, ypos=0)
+            self.add_widget(self.solo_label)
+            
+        if len(self.game.players) == 2:
+            self.col_label = GridLabel(text='[b]%d[/b]' % \
+                                       self.game.players[0].score,
+                                       markup=True, font_size=20,
+                                       xpos=2, ypos=0)
+            self.add_widget(self.col_label)
+            
+            self.row_label = GridLabel(text='[b]%d[/b]' % \
+                                       self.game.players[1].score,
+                                       markup=True, font_size=20,
+                                       xpos=4, ypos=0)
+            self.add_widget(self.row_label)
+            
+        if len(self.game.players) == 4:
+            self.col_label = GridLabel(text='[b]%d[/b]' % \
+                                       self.game.players[0].score,
+                                       markup=True, font_size=20,
+                                       xpos=1.5, ypos=0)
+            self.add_widget(self.col_label)
+            
+            self.row_label = GridLabel(text='[b]%d[/b]' % \
+                                       self.game.players[1].score,
+                                       markup=True, font_size=20,
+                                       xpos=4.5, ypos=0)
+            self.add_widget(self.row_label)            
+            
         for player in self.game.players:
             self.add_widget(GridLabel(text='[b]'+player.name+'[/b]',
-                                      markup=True,
-                                      font_size=18,
+                                      markup=True, font_size=18,
                                       xpos=player.xpos, ypos=-.3))
             self.add_widget(GridBlank(xpos=player.xpos, ypos=player.ypos,
                                       source='cards/blank.png'))
             for card in player.cards:
                 self.add_widget(card)
+                
         self.game.current_player.cards[-1].flip()
 
     def animate(self, instance, coords):
@@ -162,10 +206,18 @@ class Board(FloatLayout):
 
         if self.game.is_round_over():
             self.game.score_round()
+            if self.game.is_game_over():
+                menu_button = GridButton(xpos=3, ypos=-1, text='Back to menu')
+                self.add_widget(menu_button)
+                menu_button.bind(on_release=self.game.game_over_callback)
+                print('nagger\n')
+            else:
+                next_button = GridButton(xpos=3, ypos=-1, text='Next round')
+                self.add_widget(next_button)
+                next_button.bind(on_release=self.game.round_over_callback)
+                print('jogger\n')
+            
 
-            next_button = GridButton(xpos=3, ypos=-1, text='Next round')
-            self.add_widget(next_button)
-            next_button.bind(on_release=self.game.round_over_callback)
             
             
 
@@ -184,14 +236,19 @@ class GameScreen(Screen):
             self.game = Game(['Anna', 'Jan', 'Garrett', 'Johno'])
 
         self.board = Board(rows=7, columns=5, game=self.game)
-        self.game.bind(round_over=self.reset)
+        self.game.bind(round_over=self.new_round)
+        self.game.bind(game_over =self.goto_menu)
 
         self.add_widget(self.board)
     
-    def reset(self, *args):
+    def new_round(self, *args):
         self.remove_widget(self.board)
         self.board = Board(rows=7, columns=5, game=self.game)
         self.add_widget(self.board)
+
+    def goto_menu(self, *args):
+        self.remove_widget(self.board)
+        self.manager.current = 'menu_screen'
         
 
 
@@ -255,7 +312,7 @@ class GriddageApp(App):
 
 ##        self.settings_screen = SettingsScreen(name='settings_screen')
 ##        self.manager.add_widget(self.game_screen)
-##        
+        
         return self.manager
 
     

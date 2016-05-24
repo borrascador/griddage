@@ -86,7 +86,14 @@ class Deck:
 
 
 
-class Player:
+class GameEvents(EventDispatcher):
+    round_over = NumericProperty(0)
+    game_over  = BooleanProperty(False)
+    score = NumericProperty(0)
+
+
+
+class Player(GameEvents):
     def __init__(self, name, xpos=3, ypos=-1):
         self.cards = []
         self.score = 0
@@ -104,20 +111,12 @@ class Player:
     def is_empty(self):
         return (len(self.cards) == 0)
 
-
-
-class GameEvents(EventDispatcher):
-    round_over = BooleanProperty(False)
-    game_over  = BooleanProperty(False)
     
     
-
 class Game(GameEvents):
     def __init__(self, player_names):
         self.players = self.set_players(player_names)
         self.turn = self.cycle_players()
-        self.round_over = False
-        self.game_over  = False
 
     def set_players(self, player_names):
         if len(player_names) == 1:
@@ -148,15 +147,17 @@ class Game(GameEvents):
         return len(self.cards) == 25
 
     def round_over_callback(self, *args):
-        self.round_over = True
+        self.round_over += 1
 
     def is_game_over(self):
-        for player in self.players:
-            if player.score >= 50:
-                return True
+        if len(self.players) > 1:
+            for player in self.players:
+                if player.score >= 100:
+                    return True
         return False
 
     def game_over_callback(self, *args):
+        print('cruel,cruel,world')
         self.game_over = True
         
     def score_round(self):            
@@ -169,19 +170,8 @@ class Game(GameEvents):
         row_coords= [[(x,y) for (x,y) in coords if y==row] for row in range(1,6)]
         row_cards = [[self.cards[coord] for coord in row] for row in row_coords]
         self.row_score = self.score_cards(row_cards)
-
-        if len(self.players) > 1:
-            print('Column Score:', self.col_score)
-            print('Row Score:', self.row_score)
-            
-            if self.col_score > self.row_score:
-                print('\n', 'Columns win!')
-            elif self.row_score > self.col_score:
-                print('\n', 'Rows win!')
-            else:
-                print('Tie Game!')
-
-        else:
+        
+        if len(self.players) == 1:
             self.solo_score = self.col_score + self.row_score
             if self.solo_score < 40:
                 print('You scored %d. You are a worm.' % self.solo_score)
@@ -212,12 +202,12 @@ class Game(GameEvents):
             suits  = [card.suit for card in hand]
             ranks  = [card.rank for card in hand]
             values = [card.rank if card.rank <= 10 else 10 for card in hand]
-            score  = 0
-            score += self.score_fifteens(values)            
-            score += self.score_pairs(ranks)            
-            score += self.score_runs(ranks)       
-            score += self.score_flush(suits)
-            round_score += score
+            _score = 0
+            _score+= self.score_fifteens(values)            
+            _score+= self.score_pairs(ranks)            
+            _score+= self.score_runs(ranks)       
+            _score+= self.score_flush(suits)
+            round_score += _score
         return round_score
 
     def score_fifteens(self, values):
