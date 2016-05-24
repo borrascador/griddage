@@ -110,7 +110,6 @@ class GameEvents(EventDispatcher):
     round_over = BooleanProperty(False)
     game_over  = BooleanProperty(False)
     
-
     
 
 class Game(GameEvents):
@@ -163,24 +162,51 @@ class Game(GameEvents):
     def score_round(self):            
         coords = self.cards.keys()
         
-        v_coords= [[(x,y) for (x,y) in coords if x==col] for col in range(1,6)]
-        v_cards = [[self.cards[coord] for coord in col] for col in v_coords]
-        v_score = self.score_player(v_cards)
-        print 'Total score for player 1:', v_score
-        
-        h_coords= [[(x,y) for (x,y) in coords if y==row] for row in range(1,6)]
-        h_cards = [[self.cards[coord] for coord in row] for row in h_coords]
-        h_score = self.score_player(h_cards)
-        print 'Total score for player 2:', h_score
+        col_coords= [[(x,y) for (x,y) in coords if x==col] for col in range(1,6)]
+        col_cards = [[self.cards[coord] for coord in col] for col in col_coords]
+        self.col_score = self.score_cards(col_cards)
 
-        if v_score > h_score:
-            print '\n', 'Player 1 wins!'
-        elif h_score > v_score:
-            print '\n', 'Player 2 wins!'
+        row_coords= [[(x,y) for (x,y) in coords if y==row] for row in range(1,6)]
+        row_cards = [[self.cards[coord] for coord in row] for row in row_coords]
+        self.row_score = self.score_cards(row_cards)
+
+        if len(self.players) > 1:
+            print('Column Score:', self.col_score)
+            print('Row Score:', self.row_score)
+            
+            if self.col_score > self.row_score:
+                print('\n', 'Columns win!')
+            elif self.row_score > self.col_score:
+                print('\n', 'Rows win!')
+            else:
+                print('Tie Game!')
+
         else:
-            print 'Tie Game!'
+            self.solo_score = self.col_score + self.row_score
+            if self.solo_score < 40:
+                print('You scored %d. You are a worm.' % self.solo_score)
+            elif 40 <= self.solo_score < 50:
+                print('You scored %d. You are a crab.' % self.solo_score)
+            elif 50 <= self.solo_score < 60:
+                print('You scored %d. You are a baby.' % self.solo_score)
+            elif 60 <= self.solo_score < 70:
+                print('You scored %d. You are a child.' % self.solo_score)
+            elif 70 <= self.solo_score < 80:
+                print('You scored %d. You are a novice.' % self.solo_score)
+            elif 80 <= self.solo_score < 90:
+                print('You scored %d. You are an apprentice.' % self.solo_score)
+            elif 90 <= self.solo_score < 100:
+                print('You scored %d. You are a journeyman.' % self.solo_score)
+            elif 100 <= self.solo_score < 110:
+                print('You scored %d. You are an adept.' % self.solo_score)
+            elif 110 <= self.solo_score < 120:
+                print('You scored %d. You are a prodigy.' % self.solo_score)
+            elif 120 <= self.solo_score < 130:
+                print('You scored %d. You are a master.' % self.solo_score)
+            elif self.solo_score >= 140:
+                print('You scored %d. You are a grand master.' % self.solo_score)
 
-    def score_player(self, player_cards):
+    def score_cards(self, player_cards):
         round_score = 0
         for hand in player_cards:
             suits  = [card.suit for card in hand]
@@ -237,6 +263,3 @@ class Game(GameEvents):
         else:
             score = 0
         return score
-                    
-
-

@@ -8,6 +8,7 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.graphics import Color, Rectangle
 from kivy.animation import Animation
 from kivy.uix.button import Button
+from kivy.uix.label import Label
 from kivy.uix.image import Image
 from kivy.properties import \
      NumericProperty, ReferenceListProperty, StringProperty, ObjectProperty
@@ -21,6 +22,9 @@ class GridBlank(Image, GridEntry):
     source = StringProperty('cards/blank.png')
 
 class GridButton(Button, GridEntry):
+    pass
+
+class GridLabel(Label, GridEntry):
     pass
 
 class Animate(Animation, GridEntry):
@@ -40,15 +44,18 @@ class Board(FloatLayout):
         with self.canvas.before:
             Color(0, 0.6, 0)
             self.base_rect = Rectangle(size=self.size, pos=self.pos)
+            self.bind(size=self.update_background,
+                          pos=self.update_background)
 
-        with self.canvas.before:
-            Color(0, 0, 1, 1)
-            self.rects = [Rectangle(size=self.size, pos=self.pos), \
-                          Rectangle(size=self.size, pos=self.pos), \
-                          Rectangle(size=self.size, pos=self.pos), \
-                          Rectangle(size=self.size, pos=self.pos), \
-                          Rectangle(size=self.size, pos=self.pos)]
-            self.bind(size=self.update_background, pos=self.update_background)
+        if len(self.game.players) > 1:
+            with self.canvas.before:
+                Color(0, 0, 1, 1)
+                self.rects = [Rectangle(size=self.size, pos=self.pos), \
+                              Rectangle(size=self.size, pos=self.pos), \
+                              Rectangle(size=self.size, pos=self.pos), \
+                              Rectangle(size=self.size, pos=self.pos), \
+                              Rectangle(size=self.size, pos=self.pos)]
+
 
         self.game.play_round()
         self.make_board()
@@ -56,10 +63,14 @@ class Board(FloatLayout):
     def update_background(self, *args):
         self.base_rect.size = self.size
         self.base_rect.pos  = self.pos
+
+        if len(self.game.players) == 1:
+            return False
         
         SIZE_FACTOR = .05
         shape_hint = (self.width / self.columns, self.height / self.rows)
-        if self.game.current_player == self.game.players[0]:
+        if self.game.current_player == self.game.players[0] or \
+           self.game.current_player == self.game.players[2]:
             pos_iter = iter((x, 1) for x in range(1,6))
             size_iter = iter((1, (5-(1-SIZE_FACTOR))/SIZE_FACTOR) \
                              for i in range(5))
@@ -97,18 +108,11 @@ class Board(FloatLayout):
             super(Board, self).do_layout(*args)
         
     def make_board(self):
-        blanks = []
-        for i in range(1,6):
-            for j in range(1,6):
-                blank = GridBlank(xpos=i, ypos=j, source='cards/blank.png')
-                blanks.append(blank)
-                
-        for blank in blanks:
-            self.add_widget(blank)
-            
         buttons = []
         for i in range(1,6):
             for j in range(1,6):
+                self.add_widget(GridBlank(xpos=i, ypos=j,
+                                          source='cards/blank.png'))
                 button = GridButton(xpos=i, ypos=j, opacity=0)
                 buttons.append(button)
 
@@ -123,8 +127,14 @@ class Board(FloatLayout):
                 button.bind(on_release=self.place_card)
 
         for player in self.game.players:
+            self.add_widget(GridLabel(text='[b]'+player.name+'[/b]',
+                                      markup=True,
+                                      font_size=18,
+                                      xpos=player.xpos, ypos=-.3))
+            self.add_widget(GridBlank(xpos=player.xpos, ypos=player.ypos,
+                                      source='cards/blank.png'))
             for card in player.cards:
-                self.add_widget(card)            
+                self.add_widget(card)
         self.game.current_player.cards[-1].flip()
 
     def animate(self, instance, coords):
@@ -172,8 +182,6 @@ class GameScreen(Screen):
             self.game = Game(['Anna', 'Jan'])
         elif self.manager.mode == '4 Player Mode':
             self.game = Game(['Anna', 'Jan', 'Garrett', 'Johno'])
-        else:
-            pass
 
         self.board = Board(rows=7, columns=5, game=self.game)
         self.game.bind(round_over=self.reset)
@@ -226,7 +234,10 @@ class MenuScreen(Screen):
         
     def change(self, button):
         self.manager.mode = button.text
-        self.manager.current = 'game_screen'
+        if self.manager.mode == 'Settings':
+            self.manager.current = 'settings_screen'
+        else:
+            self.manager.current = 'game_screen'
 
         
 
@@ -241,13 +252,13 @@ class GriddageApp(App):
 
         self.game_screen = GameScreen(name='game_screen')
         self.manager.add_widget(self.game_screen)
-        
+
+##        self.settings_screen = SettingsScreen(name='settings_screen')
+##        self.manager.add_widget(self.game_screen)
+##        
         return self.manager
 
-    def start_game(self):
-        self.manager.clear_widgets()
-        self.game_screen = GameScreen(name='game_screen')
-        self.manager.add_widget(self.game_screen)
+    
 
 if __name__ == "__main__":
     GriddageApp().run()
