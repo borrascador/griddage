@@ -48,9 +48,8 @@ class Board(FloatLayout):
 
         if len(self.game.players) > 1:
             with self.canvas.before:
-                Color(0, 0, 1, 1)
+                Color(1, 1, 0, 1)
                 self.rects = [Rectangle(size=self.size, pos=self.pos), \
-                              Rectangle(size=self.size, pos=self.pos), \
                               Rectangle(size=self.size, pos=self.pos), \
                               Rectangle(size=self.size, pos=self.pos), \
                               Rectangle(size=self.size, pos=self.pos)]
@@ -65,28 +64,28 @@ class Board(FloatLayout):
         if len(self.game.players) == 1:
             return False
         
-        SIZE_FACTOR = .05
+        SIZE_FACTOR = .02
         shape_hint = (self.width / self.columns, self.height / self.rows)
 
         if len(self.game.players) == 2:
             if self.game.current_player == self.game.players[0]:
-                pos_iter  = iter((x, 1) for x in range(1,6))
-                size_iter = iter((1, (5-(1-SIZE_FACTOR))/SIZE_FACTOR) \
-                                      for i in range(5))
+                pos_iter  = iter((x+0.5, 0.5) for x in range(1,5))
+                size_iter = iter((1, (6-(1-SIZE_FACTOR))/SIZE_FACTOR) \
+                                      for i in range(4))
             else:
-                pos_iter  = iter((1, y) for y in range(1,6))
-                size_iter = iter(((5-(1-SIZE_FACTOR))/SIZE_FACTOR, 1) \
-                                      for i in range(5))
+                pos_iter  = iter((0.5, y+0.5) for y in range(1,5))
+                size_iter = iter(((6-(1-SIZE_FACTOR))/SIZE_FACTOR, 1) \
+                                      for i in range(4))
         elif len(self.game.players) == 4:
             if self.game.current_player == self.game.players[0] or \
                self.game.current_player == self.game.players[2]:
-                pos_iter  = iter((x, 1) for x in range(1,6))
-                size_iter = iter((1, (5-(1-SIZE_FACTOR))/SIZE_FACTOR) \
-                                  for i in range(5))
+                pos_iter  = iter((x+0.5, 0.5) for x in range(1,5))
+                size_iter = iter((1, (6-(1-SIZE_FACTOR))/SIZE_FACTOR) \
+                                  for i in range(4))
             else:
-                pos_iter  = iter((1, y) for y in range(1,6))
-                size_iter = iter(((5-(1-SIZE_FACTOR))/SIZE_FACTOR, 1) \
-                                      for i in range(5))
+                pos_iter  = iter((0.5, y+0.5) for y in range(1,5))
+                size_iter = iter(((6-(1-SIZE_FACTOR))/SIZE_FACTOR, 1) \
+                                      for i in range(4))
             
         for rect in self.rects:
             pos  = pos_iter.next()
@@ -169,7 +168,7 @@ class Board(FloatLayout):
             
         for player in self.game.players:
             self.add_widget(GridLabel(text='[b]'+player.name+'[/b]',
-                                      markup=True, font_size=18,
+                                      markup=True, font_size=20,
                                       xpos=player.xpos, ypos=-.3))
             self.add_widget(GridBlank(xpos=player.xpos, ypos=player.ypos,
                                       source='cards/blank.png'))
@@ -180,7 +179,7 @@ class Board(FloatLayout):
 
     def update_score(self, *args):
         if len(self.game.players) == 1:
-            self.solo_label.text = self.game.message
+            self.solo_label.text = '[b]%s[/b]' % self.game.message
         else:
             self.col_label.text  = '[b]%d[/b]' % self.game.players[0].score
             self.row_label.text  = '[b]%d[/b]' % self.game.players[1].score
@@ -222,11 +221,9 @@ class Board(FloatLayout):
             next_button = GridButton(xpos=3, ypos=-1, text='Next round')
             self.add_widget(next_button)
             next_button.bind(on_release=self.game.round_over_callback)
-                
 
             
             
-
 class GameScreen(Screen):
     def __init__(self, **kwargs):
         super(GameScreen, self).__init__(**kwargs)
