@@ -44,8 +44,7 @@ class Board(FloatLayout):
         with self.canvas.before:
             Color(0, 0.6, 0)
             self.base_rect = Rectangle(size=self.size, pos=self.pos)
-            self.bind(size=self.update_background,
-                          pos=self.update_background)
+            self.bind(size=self.update_background, pos=self.update_background)
 
         if len(self.game.players) > 1:
             with self.canvas.before:
@@ -135,7 +134,7 @@ class Board(FloatLayout):
                 self.game.cards[(3,3)] = starter
             else:
                 self.add_widget(button)
-                button.bind(on_release=self.place_card)
+                button.bind(on_press=self.place_card)
 
         if len(self.game.players) == 1:
             self.solo_label = GridLabel(text='[b]%d[/b]' % \
@@ -168,7 +167,7 @@ class Board(FloatLayout):
                                        self.game.players[1].score,
                                        markup=True, font_size=20,
                                        xpos=4.5, ypos=0)
-            self.add_widget(self.row_label)            
+            self.add_widget(self.row_label)
             
         for player in self.game.players:
             self.add_widget(GridLabel(text='[b]'+player.name+'[/b]',
@@ -181,10 +180,19 @@ class Board(FloatLayout):
                 
         self.game.current_player.cards[-1].flip()
 
+    def update_score(self, *args):
+        if len(self.game.players) == 1:
+            self.solo_label.text = '[b]%d[/b]' % self.game.players[0].score
+        else:
+            self.col_label.text  = '[b]%d[/b]' % self.game.players[0].score
+            self.row_label.text  = '[b]%d[/b]' % self.game.players[1].score
+
     def animate(self, instance, coords):
         anim  = Animate(xpos=coords[0], y=-5, duration=0.5)
         anim &= Animate(ypos=coords[1], x=-5, duration=0.5)
         anim.bind(on_complete=self.update_background)
+        if self.game.is_round_over():
+            anim.bind(on_complete=self.end_round)
         anim.start(instance)
         
     def bring_to_front(self, card):
@@ -193,30 +201,30 @@ class Board(FloatLayout):
 
     def place_card(self, button):
         coords = (button.xpos, button.ypos)
+        self.remove_widget(button)
 
         self.game.cards[coords] = self.game.current_player.pop_card()
         self.bring_to_front(self.game.cards[coords])
         self.animate(self.game.cards[coords], coords)
-        self.remove_widget(button)
 
         self.game.current_player = self.game.turn.next()
         
         if not self.game.current_player.is_empty():
             self.game.current_player.cards[-1].flip()
 
-        if self.game.is_round_over():
-            self.game.score_round()
-            if self.game.is_game_over():
-                menu_button = GridButton(xpos=3, ypos=-1, text='Back to menu')
-                self.add_widget(menu_button)
-                menu_button.bind(on_release=self.game.game_over_callback)
-                print('nagger\n')
-            else:
-                next_button = GridButton(xpos=3, ypos=-1, text='Next round')
-                self.add_widget(next_button)
-                next_button.bind(on_release=self.game.round_over_callback)
-                print('jogger\n')
-            
+    def end_round(self, *args):
+        self.game.score_round()
+        self.update_score()
+        
+        if self.game.is_game_over():
+            menu_button = GridButton(xpos=3, ypos=-1, text='Back to menu')
+            self.add_widget(menu_button)
+            menu_button.bind(on_release=self.game.game_over_callback)
+        else:
+            next_button = GridButton(xpos=3, ypos=-1, text='Next round')
+            self.add_widget(next_button)
+            next_button.bind(on_release=self.game.round_over_callback)
+                
 
             
             

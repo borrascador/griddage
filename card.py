@@ -140,9 +140,6 @@ class Game(GameEvents):
         self.deck.deal(self.players)
         self.starter = self.deck.pop_card()
 
-        for player in self.players:
-            print player.score
-
         self.cards = {}
         self.current_player = self.turn.next()
 
@@ -155,7 +152,7 @@ class Game(GameEvents):
     def is_game_over(self):
         if len(self.players) > 1:
             for player in self.players:
-                if player.score >= 100:
+                if player.score >= 61:
                     return True
         return False
 
@@ -179,6 +176,7 @@ class Game(GameEvents):
             self.players[1].score += self.row_score
         else:
             self.players[0].score = self.col_score + self.row_score
+            self.solo_score = self.players[0].score
             if self.solo_score < 40:
                 print('You scored %d. You are a worm.' % self.solo_score)
             elif 40 <= self.solo_score < 50:
