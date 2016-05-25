@@ -163,12 +163,12 @@ class Game(GameEvents):
     def score_round(self):            
         coords = self.cards.keys()
         
-        col_coords= [[(x,y) for (x,y) in coords if x==col] for col in range(1,6)]
-        col_cards = [[self.cards[coord] for coord in col] for col in col_coords]
+        col_coords=[[(x,y) for (x,y) in coords if x==col] for col in range(1,6)]
+        col_cards =[[self.cards[coord] for coord in col] for col in col_coords]
         self.col_score = self.score_cards(col_cards)
 
-        row_coords= [[(x,y) for (x,y) in coords if y==row] for row in range(1,6)]
-        row_cards = [[self.cards[coord] for coord in row] for row in row_coords]
+        row_coords=[[(x,y) for (x,y) in coords if y==row] for row in range(1,6)]
+        row_cards =[[self.cards[coord] for coord in row] for row in row_coords]
         self.row_score = self.score_cards(row_cards)
 
         if len(self.players) > 1:
@@ -178,11 +178,11 @@ class Game(GameEvents):
             self.players[0].score = self.col_score + self.row_score
             
             template  = "You scored {}. You are {}."
-            name_dict = ((0,40,'a worm'), (40,50,'a crab'), (50,60,'a baby'),
-                         (60,70,'a child'), (70,80,'a novice'),
-                         (80,90,'an apprentice'), (90,100,'a journeyman'),
-                         (100,110,'an adept'),(110,120,'a prodigy'),
-                         (120,130,'a master'),(130,200,'a grand master'))
+            name_dict = ((0,40,'a worm'), (40,50,'a crab'), (50,60,'a lizard'),
+                         (60,70,'a puppy'), (70,80,'a beaver'),
+                         (80,90,'a dikdik'), (90,100,'a water bear'),
+                         (100,110,'a magic mushroom'),(110,120,'a tiger'),
+                         (120,130,'an elephant'),(130,200,'a dragon'))
 
             for (low, high, name) in name_dict:
                 if low <= self.players[0].score < high:
