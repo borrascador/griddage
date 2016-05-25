@@ -55,7 +55,6 @@ class Board(FloatLayout):
                               Rectangle(size=self.size, pos=self.pos), \
                               Rectangle(size=self.size, pos=self.pos)]
 
-
         self.game.play_round()
         self.make_board()
 
@@ -137,8 +136,7 @@ class Board(FloatLayout):
                 button.bind(on_press=self.place_card)
 
         if len(self.game.players) == 1:
-            self.solo_label = GridLabel(text='[b]%d[/b]' % \
-                                        self.game.players[0].score,
+            self.solo_label = GridLabel(text='[b]0[/b]',
                                         markup=True, font_size=20,
                                         xpos=3, ypos=0)
             self.add_widget(self.solo_label)
@@ -182,7 +180,7 @@ class Board(FloatLayout):
 
     def update_score(self, *args):
         if len(self.game.players) == 1:
-            self.solo_label.text = '[b]%d[/b]' % self.game.players[0].score
+            self.solo_label.text = self.game.message
         else:
             self.col_label.text  = '[b]%d[/b]' % self.game.players[0].score
             self.row_label.text  = '[b]%d[/b]' % self.game.players[1].score

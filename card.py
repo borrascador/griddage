@@ -176,29 +176,18 @@ class Game(GameEvents):
             self.players[1].score += self.row_score
         else:
             self.players[0].score = self.col_score + self.row_score
-            self.solo_score = self.players[0].score
-            if self.solo_score < 40:
-                print('You scored %d. You are a worm.' % self.solo_score)
-            elif 40 <= self.solo_score < 50:
-                print('You scored %d. You are a crab.' % self.solo_score)
-            elif 50 <= self.solo_score < 60:
-                print('You scored %d. You are a baby.' % self.solo_score)
-            elif 60 <= self.solo_score < 70:
-                print('You scored %d. You are a child.' % self.solo_score)
-            elif 70 <= self.solo_score < 80:
-                print('You scored %d. You are a novice.' % self.solo_score)
-            elif 80 <= self.solo_score < 90:
-                print('You scored %d. You are an apprentice.' % self.solo_score)
-            elif 90 <= self.solo_score < 100:
-                print('You scored %d. You are a journeyman.' % self.solo_score)
-            elif 100 <= self.solo_score < 110:
-                print('You scored %d. You are an adept.' % self.solo_score)
-            elif 110 <= self.solo_score < 120:
-                print('You scored %d. You are a prodigy.' % self.solo_score)
-            elif 120 <= self.solo_score < 130:
-                print('You scored %d. You are a master.' % self.solo_score)
-            elif self.solo_score >= 140:
-                print('You scored %d. You are a grand master.' % self.solo_score)
+            
+            template  = "You scored {}. You are {}."
+            name_dict = ((0,40,'a worm'), (40,50,'a crab'), (50,60,'a baby'),
+                         (60,70,'a child'), (70,80,'a novice'),
+                         (80,90,'an apprentice'), (90,100,'a journeyman'),
+                         (100,110,'an adept'),(110,120,'a prodigy'),
+                         (120,130,'a master'),(130,200,'a grand master'))
+
+            for (low, high, name) in name_dict:
+                if low <= self.players[0].score < high:
+                    self.message = str(template.format(self.players[0].score,
+                                                       name))
 
     def score_cards(self, player_cards):
         round_score = 0
