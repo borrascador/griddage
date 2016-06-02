@@ -5,6 +5,7 @@ from kivy.properties import \
     BooleanProperty
 
 from itertools import cycle, combinations
+from random import choice
 
 
 
@@ -159,18 +160,43 @@ class Game(GameEvents):
     def game_over_callback(self, *args):
         print('cruel,cruel,world')
         self.game_over = True
+
+    def computer_move(self):
+        card = self.current_player.pop_card()
+        cards_ = self.cards
+        move_scores = {}
+        for i in range(1,6):
+            for j in range(1,6):
+                if (i,j) not in cards_.keys():
+                    cards_[(i,j)] = card
+                    self.calculate_scores(cards_.keys())
+                    move_scores[(i,j)] = self.row_score - self.col_score
+                    del cards_[(i,j)]
+        move_scores = sorted(move_scores.items(),
+                             key=lambda x: x[1], reverse=True)
+        high_scores = [((i,j),c) for ((i,j),c) in move_scores
+                       if c == move_scores[0][1]]
+##        print(high_scores)
+        coord = choice(high_scores)[0]
+        return (coord, card)
         
-    def score_round(self):            
-        coords = self.cards.keys()
-        
+    def calculate_scores(self, coords=None):
+        if coords==None:
+            coords=self.cards.keys()
+
+        self.col_score, self.row_score = 0, 0
+            
         col_coords=[[(x,y) for (x,y) in coords if x==col] for col in range(1,6)]
+        col_coords=[coord for coord in col_coords if coord!=[]]
         col_cards =[[self.cards[coord] for coord in col] for col in col_coords]
         self.col_score = self.score_cards(col_cards)
 
         row_coords=[[(x,y) for (x,y) in coords if y==row] for row in range(1,6)]
+        row_coords=[coord for coord in row_coords if coord!=[]]
         row_cards =[[self.cards[coord] for coord in row] for row in row_coords]
         self.row_score = self.score_cards(row_cards)
 
+    def score_round(self):     
         if len(self.players) > 1:
             self.players[0].score += self.col_score
             self.players[1].score += self.row_score
@@ -196,10 +222,10 @@ class Game(GameEvents):
             ranks  = [card.rank for card in hand]
             values = [card.rank if card.rank <= 10 else 10 for card in hand]
             score  = 0
-            score += self.score_fifteens(values)            
-            score += self.score_pairs(ranks)            
-            score += self.score_runs(ranks)       
-            score += self.score_flush(suits)
+            score += self.score_fifteens(values)
+            score += self.score_pairs(ranks)
+            score += self.score_runs(ranks)
+            score += self.score_flush(suits, hand)
             round_score += score
         return round_score
 
@@ -240,9 +266,11 @@ class Game(GameEvents):
         else:
             return False
 
-    def score_flush(self, suits):
+    def score_flush(self, suits, hand):
         if len(set(suits)) == 1:
-            score = 5
+            # Flushes are scored as 5 at end of round
+            # However they are rated less by computer during the game
+            score = len(hand)
         else:
             score = 0
         return score
