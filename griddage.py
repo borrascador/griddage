@@ -58,6 +58,9 @@ class Board(FloatLayout):
         self.make_board()
 
     def update_background(self, *args):
+        for button in self.buttons.values():
+            button.disabled = False
+            
         self.base_rect.size = self.size
         self.base_rect.pos  = self.pos
 
@@ -185,6 +188,8 @@ class Board(FloatLayout):
             self.row_label.text  = '[b]%d[/b]' % self.game.players[1].score
 
     def animate(self, instance, coords):
+        for button in self.buttons.values():
+            button.disabled = True
         anim  = Animate(xpos=coords[0], y=-5, duration=0.5)
         anim &= Animate(ypos=coords[1], x=-5, duration=0.5)
         anim.bind(on_complete=self.update_background)
@@ -228,7 +233,6 @@ class Board(FloatLayout):
     
             if not self.game.current_player.is_empty():
                 self.game.current_player.cards[-1].flip()
-
 
     def end_round(self, *args):
         self.game.calculate_scores()

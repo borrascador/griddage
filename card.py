@@ -158,7 +158,6 @@ class Game(GameEvents):
         return False
 
     def game_over_callback(self, *args):
-        print('cruel,cruel,world')
         self.game_over = True
 
     def computer_move(self):
