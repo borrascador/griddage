@@ -180,6 +180,10 @@ class Board(FloatLayout):
                 
         self.game.current_player.cards[-1].flip()
 
+        if self.game.players[1].name == "Bot1" and \
+           self.game.current_player.name == "Bot1":
+            self.computer_turn()
+
     def update_score(self, *args):
         if len(self.game.players) == 1:
             self.solo_label.text = '[b]%s[/b]' % self.game.message
@@ -195,8 +199,8 @@ class Board(FloatLayout):
         anim.bind(on_complete=self.update_background)
         if self.game.is_round_over():
             anim.bind(on_complete=self.end_round)
-        if self.game.players[1].name == "Bot1" and \
-           self.game.current_player.name != "Bot1":
+        elif self.game.players[1].name == "Bot1" and \
+             self.game.current_player.name != "Bot1":
             anim.bind(on_complete=self.computer_turn)
         anim.start(instance)
         
@@ -311,8 +315,8 @@ class MenuScreen(Screen):
         self.make_buttons()
 
     def make_buttons(self):
-        button_names = ['Solitaire Mode', '2 Player Mode', 'Challenge Mode',
-                        '4 Player Mode', 'Settings']
+        button_names = ['Solitaire Mode', '2 Player Mode', '4 Player Mode',
+                        'Challenge Mode', 'Settings']
 
         for name in button_names:
             button = Button(text=name, font_size=50, 

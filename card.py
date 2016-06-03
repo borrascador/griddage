@@ -175,7 +175,6 @@ class Game(GameEvents):
                              key=lambda x: x[1], reverse=True)
         high_scores = [((i,j),c) for ((i,j),c) in move_scores
                        if c == move_scores[0][1]]
-##        print(high_scores)
         coord = choice(high_scores)[0]
         return (coord, card)
         
