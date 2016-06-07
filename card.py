@@ -2,7 +2,7 @@ from kivy.uix.image import Image
 from kivy.event import EventDispatcher
 from kivy.properties import \
     NumericProperty, ReferenceListProperty, StringProperty, ObjectProperty, \
-    BooleanProperty
+    BooleanProperty, ListProperty, BoundedNumericProperty
 
 from itertools import cycle, combinations
 from random import choice
@@ -16,13 +16,14 @@ class GridEntry(EventDispatcher):
 
 
 class Card:
-    def __init__(self, suit=0, rank=1):
+    def __init__(self, card_back, suit=0, rank=1):
         self.suit = suit
         self.rank = rank
+        self.card_back = card_back
         if suit != None and rank != None:
             self.source = 'cards/s{}r{}.png'.format(self.suit, self.rank)
         else:
-            self.source = 'cards/back1.png'
+            self.source = 'cards/back{}.png'.format(str(self.card_back))
 
     def __str__(self):
         return 's{}r{}'.format(self.suit, self.rank)
@@ -36,6 +37,7 @@ class CardImage(Image, GridEntry, Card):
         self.xpos, self.ypos = xpos, ypos
         self.card = card
         self.suit, self.rank = card.suit, card.rank
+        self.card_back = card.card_back
         self.source = card.source
         self.face_down = face_down
         if self.face_down:
@@ -44,7 +46,7 @@ class CardImage(Image, GridEntry, Card):
     def flip(self):
         if self.face_down == True:
             self.face_down = False
-            self.source = 'cards/back1.png'
+            self.source = 'cards/back{}.png'.format(self.card_back)
         else:
             self.face_down = True
             self.source = self.card.source
@@ -52,11 +54,11 @@ class CardImage(Image, GridEntry, Card):
 
 
 class Deck:
-    def __init__(self):
+    def __init__(self, card_back):
         self.cards = []
         for suit in range(4):
             for rank in range(1,14):
-                self.cards.append(Card(suit, rank))
+                self.cards.append(Card(card_back, suit, rank))
 
     def __str__(self):
         s = ''
@@ -88,7 +90,7 @@ class Deck:
 
 
 class GameEvents(EventDispatcher):
-    round_over = NumericProperty(0)
+    round_over = NumericProperty(1)
     game_over  = BooleanProperty(False)
     score = NumericProperty(0)
 
@@ -115,8 +117,10 @@ class Player(GameEvents):
     
     
 class Game(GameEvents):
-    def __init__(self, player_names):
+    def __init__(self, player_names, victory_score, card_back):
         self.players = self.set_players(player_names)
+        self.victory_score = victory_score
+        self.card_back = card_back
         self.turn = self.cycle_players()
 
     def set_players(self, player_names):
@@ -136,7 +140,7 @@ class Game(GameEvents):
             yield player
             
     def play_round(self):
-        self.deck = Deck()
+        self.deck = Deck(self.card_back)
         self.deck.shuffle()
         self.deck.deal(self.players)
         self.starter = self.deck.pop_card()
@@ -153,7 +157,7 @@ class Game(GameEvents):
     def is_game_over(self):
         if len(self.players) > 1:
             for player in self.players:
-                if player.score >= 61:
+                if player.score >= self.victory_score:
                     return True
         return False
 
