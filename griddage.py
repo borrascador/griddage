@@ -79,7 +79,8 @@ class Board(FloatLayout):
         shape_hint = (self.width / self.columns, self.height / self.rows)
 
         if len(self.game.players) == 2:
-            if self.game.current_player == self.game.players[0]:
+            if self.game.current_player == self.game.players[0] or \
+               self.game.players[1].name == 'Bot1':
                 pos_iter  = iter((x+0.5, 0.5) for x in range(1,5))
                 size_iter = iter((1, (6-(1-SIZE_FACTOR))/SIZE_FACTOR) \
                                       for i in range(4))
@@ -185,6 +186,22 @@ class Board(FloatLayout):
                                       source='cards/blank.png'))
             for card in player.cards:
                 self.add_widget(card)
+
+        pause_button = Button(text='Pause', font_size=20)
+        quit_button = Button(text='Quit', font_size=20)
+        if len(self.game.players) == 1:
+            pause_button.xpos, pause_button.ypos = 1, -1
+            quit_button.xpos, quit_button.ypos = 5, -1
+        elif len(self.game.players) > 1:
+            pause_button.xpos, pause_button.ypos = 3, 0
+            quit_button.xpos, quit_button.ypos = 3, -1
+            
+        pause_button.bind(on_press=self.game.pause_game_callback)
+        self.add_widget(pause_button)
+
+        quit_button.bind(on_press=self.game.game_over_callback)
+        self.add_widget(quit_button)
+            
                 
         self.game.current_player.cards[-1].flip()
 
@@ -276,16 +293,31 @@ class GameScreen(Screen):
             self.game = Game(names[:1], victory_score, card_back)
         elif self.manager.mode == '2 Player Mode':
             self.game = Game(names[:2], victory_score, card_back)
-        elif self.manager.mode == 'Challenge Mode':
-            self.game = Game([names[0], 'Bot1'], victory_score, card_back)
         elif self.manager.mode == '4 Player Mode':
             self.game = Game(names[:4], victory_score, card_back)
+        elif self.manager.mode == 'Challenge Mode':
+            self.game = Game([names[0], 'Bot1'], victory_score, card_back)
 
         self.board = Board(rows=7, columns=5, game=self.game)
+        self.game.bind(pause_game=self.pause)
         self.game.bind(round_over=self.new_round)
         self.game.bind(game_over =self.goto_menu)
 
         self.add_widget(self.board)
+
+    def pause(self, *args):
+        popup_layout = StackLayout(orientation='tb-lr',
+                                   spacing=[20,20],
+                                   padding=[20,20])
+
+        self.popup = Popup(title='Pause',
+                           content=popup_layout, 
+                           size_hint=(0.6,0.4))
+        self.popup.open()
+
+        resume_button = Button(text='Resume', font_size=50)
+        resume_button.bind(on_press=self.popup.dismiss)
+        popup_layout.add_widget(resume_button)
     
     def new_round(self, *args):
         self.remove_widget(self.board)
@@ -344,8 +376,8 @@ class SettingsScreen(Screen):
                                    padding=[20,20])
 
         self.popup = Popup(title='Edit Names',
-                      content=popup_layout, 
-                      size_hint=(0.8,None), height=290)
+                           content=popup_layout, 
+                           size_hint=(0.8,None), height=290)
         self.popup.open()
         
         for num in range(1,5):
@@ -371,8 +403,8 @@ class SettingsScreen(Screen):
                                    padding=[20,20])
 
         self.popup = Popup(title='Choose Victory Score',
-                      content=popup_layout, 
-                      size_hint=(0.8,None), height=150)
+                           content=popup_layout, 
+                           size_hint=(0.8,None), height=150)
         self.popup.open()
         
         label = Label(text='Victory Score', size_hint=(0.5,None), height=30)
@@ -394,13 +426,13 @@ class SettingsScreen(Screen):
                                    padding=[20,20])
 
         self.popup = Popup(title='Choose Card Backs',
-                      content=popup_layout, 
-                      size_hint=(0.8,None), height=200)
+                           content=popup_layout, 
+                           size_hint=(0.8,0.85))
         self.popup.open()
         
         for value in range(1,7):
             source = 'cards/back{}.png'.format(str(value))
-            card_button = CardButton(source=source, size_hint=(0.1666, None))
+            card_button = CardButton(source=source, size_hint=(0.5, 0.3))
             card_button.value = value
             card_button.bind(on_press=self.change_backs)
             popup_layout.add_widget(card_button)

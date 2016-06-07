@@ -90,6 +90,7 @@ class Deck:
 
 
 class GameEvents(EventDispatcher):
+    pause_game = BooleanProperty(False)
     round_over = NumericProperty(1)
     game_over  = BooleanProperty(False)
     score = NumericProperty(0)
@@ -147,6 +148,12 @@ class Game(GameEvents):
 
         self.cards = {}
         self.current_player = self.turn.next()
+
+    def pause_game_callback(self, *args):
+        if self.pause_game:
+            self.pause_game = False
+        else:
+            self.pause_game = True
 
     def is_round_over(self):
         return len(self.cards) == 25
