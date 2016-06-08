@@ -13,6 +13,7 @@ from kivy.uix.behaviors import ButtonBehavior
 from kivy.uix.button import Button
 from kivy.uix.label import Label
 from kivy.uix.image import Image
+from kivy.uix.widget import Widget
 from kivy.uix.textinput import TextInput
 from kivy.uix.popup import Popup
 from kivy.properties import \
@@ -24,7 +25,7 @@ from card import Card, Deck, GridEntry, CardImage, Player, Game
 
 
 class GridBlank(Image, GridEntry):
-    source = StringProperty('cards/blank.png')
+    source = StringProperty('cards/felt.png')
 
 class GridButton(Button, GridEntry):
     pass
@@ -49,28 +50,40 @@ class Board(FloatLayout):
     def __init__(self, **kwargs):
         super(Board, self).__init__(**kwargs)
 
+        self.texture = Image(source='cards/felt.png').texture
+        self.texture.wrap = 'repeat'
+        self.texture.uvsize = (20,20)
         with self.canvas.before:
-            Color(0, 0.6, 0)
-            self.base_rect = Rectangle(size=self.size, pos=self.pos)
-            self.bind(size=self.update_background, pos=self.update_background)
+            Color(0, 0, 0)
+            self.rect = Rectangle(pos=(0,0), size=(2000,2000))
 
-        if len(self.game.players) > 1:
-            with self.canvas.before:
+        with self.canvas.before:
+            if len(self.game.players) > 1:
                 Color(1, 1, 0, 1)
                 self.rects = [Rectangle(size=self.size, pos=self.pos), \
                               Rectangle(size=self.size, pos=self.pos), \
                               Rectangle(size=self.size, pos=self.pos), \
                               Rectangle(size=self.size, pos=self.pos)]
+                self.bind(size=self.update_background,
+                          pos=self.update_background)
 
         self.game.play_round()
         self.make_board()
 
+    def enter_background(self, *args):
+        with self.canvas.before:
+            Color(0, 2, 0)
+            self.rect = Rectangle(pos=(0,0), size=(2000,2000),
+                                  texture=self.texture)
+
+    def exit_background(self, *args):
+        with self.canvas.before:
+            Color(0, 0, 0)
+            self.rect = Rectangle(pos=(0,0), size=(2000,2000))
+
     def update_background(self, *args):
         for button in self.buttons.values():
             button.disabled = False
-            
-        self.base_rect.size = self.size
-        self.base_rect.pos  = self.pos
 
         if len(self.game.players) == 1:
             return False
@@ -131,8 +144,10 @@ class Board(FloatLayout):
         self.buttons = dict()
         for i in range(1,6):
             for j in range(1,6):
-                self.add_widget(GridBlank(xpos=i, ypos=j,
-                                          source='cards/blank.png'))
+                blank = GridBlank(xpos=i, ypos=j, source='cards/blank.png')
+                self.add_widget(blank)
+                with blank.canvas:
+                    blank.opacity = 0.4
                 button = GridButton(xpos=i, ypos=j, opacity=0)
                 self.buttons[(i,j)] = button
 
@@ -182,13 +197,17 @@ class Board(FloatLayout):
             self.add_widget(GridLabel(text='[b]'+player.name+'[/b]',
                                       markup=True, font_size=20,
                                       xpos=player.xpos, ypos=-.3))
-            self.add_widget(GridBlank(xpos=player.xpos, ypos=player.ypos,
-                                      source='cards/blank.png'))
+            blank = GridBlank(xpos=player.xpos, ypos=player.ypos,
+                              source='cards/blank.png')
+            self.add_widget(blank)
+            with blank.canvas:
+                blank.opacity = 0.4
             for card in player.cards:
                 self.add_widget(card)
 
         pause_button = Button(text='Pause', font_size=20)
         quit_button = Button(text='Quit', font_size=20)
+        
         if len(self.game.players) == 1:
             pause_button.xpos, pause_button.ypos = 1, -1
             quit_button.xpos, quit_button.ypos = 5, -1
@@ -198,11 +217,9 @@ class Board(FloatLayout):
             
         pause_button.bind(on_press=self.game.pause_game_callback)
         self.add_widget(pause_button)
-
         quit_button.bind(on_press=self.game.game_over_callback)
         self.add_widget(quit_button)
-            
-                
+        
         self.game.current_player.cards[-1].flip()
 
         if len(self.game.players) == 2 and self.game.players[1].name == "Bot1" \
@@ -269,9 +286,9 @@ class Board(FloatLayout):
         self.update_score()
         
         if self.game.is_game_over():
-            menu_button = GridButton(xpos=3, ypos=-1, text='Back to menu')
-            self.add_widget(menu_button)
-            menu_button.bind(on_release=self.game.game_over_callback)
+            main_button = GridButton(xpos=3, ypos=-1, text='Back to main')
+            self.add_widget(main_button)
+            main_button.bind(on_release=self.game.game_over_callback)
         else:
             next_button = GridButton(xpos=3, ypos=-1, text='Next round')
             self.add_widget(next_button)
@@ -289,33 +306,41 @@ class GameScreen(Screen):
         names = self.manager.all_names
         victory_score = self.manager.victory_score
         card_back = self.manager.card_back
-        if   self.manager.mode == 'Solitaire Mode':
+        if   self.manager.mode == 'Solitaire':
             self.game = Game(names[:1], victory_score, card_back)
-        elif self.manager.mode == '2 Player Mode':
+        elif self.manager.mode == '2 Players':
             self.game = Game(names[:2], victory_score, card_back)
-        elif self.manager.mode == '4 Player Mode':
+        elif self.manager.mode == '4 Players':
             self.game = Game(names[:4], victory_score, card_back)
-        elif self.manager.mode == 'Challenge Mode':
+        elif self.manager.mode == 'Challenge':
             self.game = Game([names[0], 'Bot1'], victory_score, card_back)
 
         self.board = Board(rows=7, columns=5, game=self.game)
         self.game.bind(pause_game=self.pause)
         self.game.bind(round_over=self.new_round)
-        self.game.bind(game_over =self.goto_menu)
+        self.game.bind(game_over =self.goto_main)
 
         self.add_widget(self.board)
+        self.board.enter_background()
+        self.bind(on_leave=self.board.exit_background)
 
     def pause(self, *args):
         popup_layout = StackLayout(orientation='tb-lr',
-                                   spacing=[20,20],
-                                   padding=[20,20])
+                                   spacing=[10,10],
+                                   padding=[10,10])
 
         self.popup = Popup(title='Pause',
                            content=popup_layout, 
-                           size_hint=(0.6,0.4))
+                           size_hint=(0.8,0.4))
         self.popup.open()
 
-        resume_button = Button(text='Resume', font_size=50)
+        victory_score = self.manager.victory_score
+        victory_label = Label(text='Playing to {}'.format(victory_score),
+                              font_size=30, size_hint=(1,0.5))
+        popup_layout.add_widget(victory_label)
+
+        resume_button = Button(text='Resume',
+                               font_size=30, size_hint=(1,0.5))
         resume_button.bind(on_press=self.popup.dismiss)
         popup_layout.add_widget(resume_button)
     
@@ -323,52 +348,63 @@ class GameScreen(Screen):
         self.remove_widget(self.board)
         self.board = Board(rows=7, columns=5, game=self.game)
         self.add_widget(self.board)
+        self.board.enter_background()
 
-    def goto_menu(self, *args):
+    def goto_main(self, *args):
         self.remove_widget(self.board)
-        self.manager.current = 'menu_screen'
+        self.manager.current = 'main_screen'
 
 
 
 class MenuLayout(BoxLayout):
     def __init__(self, **kwargs):
         super(MenuLayout, self).__init__(**kwargs)
-        
-        with self.canvas.before:
-            Color(0, 0.6, 0)
-            self.base_rect = Rectangle(size=self.size, pos=self.pos)
-            self.bind(size=self.update_background, pos=self.update_background)
 
+        self.texture = Image(source='cards/felt.png').texture
+        self.texture.wrap = 'repeat'
+        self.texture.uvsize = (20,20)
+        with self.canvas.before:
+            Color(0, 0, 0)
+            self.rect = Rectangle(pos=(0,0), size=(2000,2000))
+            
         self.orientation, self.spacing, self.padding = ('vertical', 20, [0, 20])
 
-    def update_background(self, *args):
-        self.base_rect.size = self.size
-        self.base_rect.pos  = self.pos
+    def enter_background(self, *args):
+        with self.canvas.before:
+            Color(0, 2, 0)
+            self.rect = Rectangle(pos=(0,0), size=(2000,2000),
+                                  texture=self.texture)
 
+    def exit_background(self, *args):
+        with self.canvas.before:
+            Color(0, 0, 0)
+            self.rect = Rectangle(pos=(0,0), size=(2000,2000))
 
 
 class SettingsScreen(Screen):
     def __init__(self, **kwargs):
         super(SettingsScreen, self).__init__(**kwargs)
 
-        self.settings = MenuLayout()
-        self.add_widget(self.settings)
+        self.layout = MenuLayout()
+        self.add_widget(self.layout)
         self.make_widgets()
+        self.bind(on_pre_enter=self.layout.enter_background)
+        self.bind(on_leave=self.layout.exit_background)
 
     def make_widgets(self):
-        self.settings.add_widget(Label(text='Settings', font_size=50,
-                                       pos_hint={'center_x':.5},
-                                       size_hint=(0.9,0.9)))
+        self.layout.add_widget(Label(text='Settings', font_size=50,
+                                     pos_hint={'center_x':.5},
+                                     size_hint=(0.9,0.9)))
         button_names = ('Edit Names', self.popup_names), \
                        ('Victory Score', self.popup_score), \
                        ('Card Backs', self.popup_backs), \
-                       ('Back to Menu', self.back_to_menu)
+                       ('Back to Menu', self.back_to_main)
 
         for name in button_names:
             button = Button(text=name[0], font_size=50,
                             pos_hint={'center_x':.5}, size_hint=(0.9,0.9))
             button.bind(on_press=name[1])
-            self.settings.add_widget(button)
+            self.layout.add_widget(button)
 
     def popup_names(self, button):
         popup_layout = StackLayout(orientation='tb-lr',
@@ -441,32 +477,34 @@ class SettingsScreen(Screen):
         self.manager.card_back = card_button.value
         self.popup.dismiss()
         
-    def back_to_menu(self, button):
-        self.manager.current = 'menu_screen'
+    def back_to_main(self, button):
+        self.manager.current = 'main_screen'
         
 
 
-class MenuScreen(Screen):
+class MainScreen(Screen):
     def __init__(self, **kwargs):
-        super(MenuScreen, self).__init__(**kwargs)
+        super(MainScreen, self).__init__(**kwargs)
 
-        self.menu = MenuLayout()
-        self.add_widget(self.menu)
+        self.layout = MenuLayout()
+        self.add_widget(self.layout)
         self.make_widgets()
+        self.bind(on_pre_enter=self.layout.enter_background)
+        self.bind(on_leave=self.layout.exit_background)
 
     def make_widgets(self):
         title = Label(text='Griddage', font_size=50,
                       pos_hint={'center_x':.5}, size_hint=(0.9,0.9))
-        self.menu.add_widget(title)
+        self.layout.add_widget(title)
         
-        button_names = ['Solitaire Mode', '2 Player Mode', '4 Player Mode',
-                        'Challenge Mode', 'Settings']
+        button_names = ['Solitaire', '2 Players', '4 Players',
+                        'Challenge', 'Settings']
         
         for name in button_names:
             button = Button(text=name, font_size=50, 
                             pos_hint={'center_x':.5}, size_hint=(0.9,0.9))
             button.bind(on_press=self.switch_screens)
-            self.menu.add_widget(button)
+            self.layout.add_widget(button)
         
     def switch_screens(self, button):
         self.manager.mode = button.text
@@ -490,8 +528,8 @@ class GriddageApp(App):
 
         self.manager.mode = 'Initial'
 
-        self.menu_screen = MenuScreen(name='menu_screen')
-        self.manager.add_widget(self.menu_screen)
+        self.main_screen = MainScreen(name='main_screen')
+        self.manager.add_widget(self.main_screen)
 
         self.game_screen = GameScreen(name='game_screen')
         self.manager.add_widget(self.game_screen)
