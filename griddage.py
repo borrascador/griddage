@@ -2,23 +2,25 @@ import kivy
 kivy.require('1.9.1')
 
 from kivy.app import App
+
 from kivy.animation import Animation
 from kivy.event import EventDispatcher
 from kivy.graphics import Color, Rectangle
-from kivy.uix.screenmanager import Screen, ScreenManager
-from kivy.uix.floatlayout import FloatLayout
-from kivy.uix.boxlayout import BoxLayout
-from kivy.uix.stacklayout import StackLayout
-from kivy.uix.behaviors import ButtonBehavior
-from kivy.uix.button import Button
-from kivy.uix.label import Label
-from kivy.uix.image import Image
-from kivy.uix.widget import Widget
-from kivy.uix.textinput import TextInput
-from kivy.uix.popup import Popup
 from kivy.properties import \
      NumericProperty, ReferenceListProperty, StringProperty, ObjectProperty, \
      ListProperty
+from kivy.uix.behaviors import ButtonBehavior
+from kivy.uix.behaviors import DragBehavior
+from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.button import Button
+from kivy.uix.floatlayout import FloatLayout
+from kivy.uix.image import Image
+from kivy.uix.label import Label
+from kivy.uix.popup import Popup
+from kivy.uix.screenmanager import Screen, ScreenManager
+from kivy.uix.stacklayout import StackLayout
+from kivy.uix.textinput import TextInput
+from kivy.uix.widget import Widget
 
 from card import Card, Deck, GridEntry, CardImage, Player, Game
 

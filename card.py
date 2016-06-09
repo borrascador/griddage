@@ -1,8 +1,8 @@
-from kivy.uix.image import Image
 from kivy.event import EventDispatcher
 from kivy.properties import \
     NumericProperty, ReferenceListProperty, StringProperty, ObjectProperty, \
     BooleanProperty, ListProperty, BoundedNumericProperty
+from kivy.uix.image import Image
 
 from itertools import cycle, combinations
 from random import choice
