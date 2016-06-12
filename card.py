@@ -98,11 +98,12 @@ class GameEvents(EventDispatcher):
 
 
 class Player(GameEvents):
-    def __init__(self, name, xpos=3, ypos=-1):
+    def __init__(self, name, xpos=3, ypos=-1, npc=False):
         self.cards = []
         self.score = 0
         self.name = name
         self.xpos, self.ypos = xpos, ypos
+        self.npc = npc
         
     def add_card(self, card):
         card_image = CardImage(xpos=self.xpos, ypos=self.ypos, card=card)
