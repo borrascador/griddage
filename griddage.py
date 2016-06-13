@@ -28,15 +28,35 @@ from card import Card, Deck, GridEntry, CardImage, Player, Game
 
 class Animation(Animation, GridEntry):
     pass
-
-class Label(Label):
-    font_name = 'cards/Chunkfive.otf'
     
 class Button(Button):
     background_normal = ''
     background_color = [0.2, 0.65, 0.2, 0.5]
-    font_name = 'cards/Chunkfive.otf'
+    font_name = 'fonts/Chunkfive.otf'
+
+class Label(Label):
+    font_name = 'fonts/Chunkfive.otf'
+
+class Popup(Popup):
+    title_font = 'fonts/Chunkfive.otf'
+    title_size = '30sp'
+    title_align = 'center'
+    font_size = 20
+    separator_color = [1,1,1,1]
+    background_color = [0, 2, 0]
+    background = 'cards/felt2.png'
     
+    def __init__(self, **kwargs):
+        super(Popup, self).__init__(**kwargs)
+
+        with self.canvas.before:
+            Color(0, 0.7, 0, 1)
+            self.rect = Rectangle(size=self.size, pos=self.pos)
+            self.bind(size=self.update_background, pos=self.update_background)
+            
+    def update_background(self, *args):
+        self.rect.size, self.rect.pos = self.size, self.pos
+
 class GridBlank(ButtonBehavior, Image, GridEntry):
     source = StringProperty('cards/felt.png')
 
@@ -60,6 +80,8 @@ class Board(FloatLayout):
 
     def __init__(self, **kwargs):
         super(Board, self).__init__(**kwargs)
+
+        self.button_font_size = 20
 
         self.texture = Image(source='cards/felt2.png').texture
         self.texture.wrap = 'repeat'
@@ -192,26 +214,31 @@ class Board(FloatLayout):
             self.add_widget(GridLabel(text='[b]'+player.name+'[/b]',
                                       markup=True, font_size=20,
                                       xpos=player.xpos, ypos=-.3))
-            self.add_widget(GridBlank(xpos=player.xpos, ypos=player.ypos,
-                                      source='cards/blank.png', opacity = 0.4))
+            if not len(self.game.players) == 1:
+                self.add_widget(GridBlank(xpos=player.xpos, ypos=player.ypos,
+                                          source='cards/blank.png',
+                                          opacity = 0.4))
             for card in player.cards:
                 self.add_widget(card)
 
-        pause_button = GridButton(text='Pause', font_size=20)
-        quit_button = GridButton(text='Quit', font_size=20)
+        self.pause_button = GridButton(text='PAUSE',
+                                       font_size=self.button_font_size)
+        self.quit_button = GridButton(text='QUIT',
+                                      font_size=self.button_font_size)
         
         if len(self.game.players) == 1:
-            pause_button.xpos, pause_button.ypos = 1, -1
-            quit_button.xpos, quit_button.ypos = 5, -1
-        elif len(self.game.players) > 1:
-            pause_button.xpos, pause_button.ypos = 3, 0
-            quit_button.xpos, quit_button.ypos = 3, -1
+            self.pause_button.xpos, self.pause_button.ypos = 1, -1
+            self.quit_button.xpos, self.quit_button.ypos = 5, -1
             
-        pause_button.bind(on_press=self.game.pause_game_callback)
-        quit_button.bind(on_press=self.game.game_over_callback)
+        elif len(self.game.players) > 1:
+            self.pause_button.xpos, self.pause_button.ypos = 3, 0
+            self.quit_button.xpos, self.quit_button.ypos = 3, -1
+            
+        self.pause_button.bind(on_press=self.game.pause_game_callback)
+        self.quit_button.bind(on_press=self.game.game_over_callback)
 
-        self.add_widget(pause_button)
-        self.add_widget(quit_button)
+        self.add_widget(self.pause_button)
+        self.add_widget(self.quit_button)
         
         self.game.current_player.cards[-1].flip()
 
@@ -279,13 +306,19 @@ class Board(FloatLayout):
         self.game.calculate_scores()
         self.game.score_round()
         self.update_score()
+
+        if not len(self.game.players) == 1:
+            self.remove_widget(self.pause_button)
+            self.remove_widget(self.quit_button)
         
         if self.game.is_game_over():
-            main_button = GridButton(xpos=3, ypos=-1, text='Back to main')
+            main_button = GridButton(xpos=3, ypos=-1, text='TO MENU',
+                                     font_size=self.button_font_size)
             self.add_widget(main_button)
             main_button.bind(on_release=self.game.game_over_callback)
         else:
-            next_button = GridButton(xpos=3, ypos=-1, text='Next round')
+            next_button = GridButton(xpos=3, ypos=-1, text='NEXT ROUND',
+                                     font_size=self.button_font_size)
             self.add_widget(next_button)
             next_button.bind(on_release=self.game.round_over_callback)
 
@@ -396,7 +429,7 @@ class SettingsScreen(Screen):
         
         button_names = ('EDIT NAMES', self.popup_names), \
                        ('VICTORY SCORE', self.popup_score), \
-                       ('CARDBACKS', self.popup_backs), \
+                       ('CARD BACKS', self.popup_backs), \
                        ('BACK TO MENU', self.goto_main)
 
         for name in button_names:
@@ -411,14 +444,15 @@ class SettingsScreen(Screen):
                                    spacing=[20,20],
                                    padding=[20,20])
 
-        self.popup = Popup(title='Edit Names',
+        self.popup = Popup(title='EDIT NAMES',
                            content=popup_layout, 
-                           size_hint=(0.8,None), height=290)
+                           size_hint=(0.8,None), height=300)
         self.popup.open()
         
         for num in range(1,5):
-            label_text = 'Player ' + str(num)
-            label = Label(text=label_text, size_hint=(0.5,None), height=30)
+            label_text = 'PLAYER ' + str(num)
+            label = Label(text=label_text, font_size=self.popup.font_size,
+                          size_hint=(0.5,None), height=30)
             popup_layout.add_widget(label)
 
         self.name_inputs = []            
@@ -438,12 +472,13 @@ class SettingsScreen(Screen):
                                    spacing=[20,20],
                                    padding=[20,20])
 
-        self.popup = Popup(title='Choose Victory Score',
+        self.popup = Popup(title='CHOOSE VICTORY SCORE',
                            content=popup_layout, 
                            size_hint=(0.8,None), height=150)
         self.popup.open()
         
-        label = Label(text='Victory Score', size_hint=(0.5,None), height=30)
+        label = Label(text='VICTORY SCORE', font_size=self.popup.font_size,
+                      size_hint=(0.5,None), height=30)
         popup_layout.add_widget(label)
             
         score_input = TextInput(text=str(self.manager.victory_score),
@@ -461,7 +496,7 @@ class SettingsScreen(Screen):
                                    spacing=[20,20],
                                    padding=[20,20])
 
-        self.popup = Popup(title='Choose Card Backs',
+        self.popup = Popup(title='CHOOSE CARD BACKS',
                            content=popup_layout, 
                            size_hint=(0.8,0.85))
         self.popup.open()
