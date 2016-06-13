@@ -26,19 +26,28 @@ from card import Card, Deck, GridEntry, CardImage, Player, Game
 
 
 
+class Animation(Animation, GridEntry):
+    pass
+
+class Label(Label):
+    font_name = 'cards/Chunkfive.otf'
+    
+class Button(Button):
+    background_normal = ''
+    background_color = [0.2, 0.65, 0.2, 0.5]
+    font_name = 'cards/Chunkfive.otf'
+    
 class GridBlank(ButtonBehavior, Image, GridEntry):
     source = StringProperty('cards/felt.png')
 
 class GridButton(Button, GridEntry):
-    pass
+    background_normal = ''
+    background_color = [0.1, 0.8, 0.1, 0.5]
 
 class GridLabel(Label, GridEntry):
     pass
 
 class CardButton(ButtonBehavior, Image):
-    pass
-
-class Animation(Animation, GridEntry):
     pass
 
 
@@ -292,13 +301,13 @@ class GameScreen(Screen):
         names = self.manager.all_names
         victory_score = self.manager.victory_score
         card_back = self.manager.card_back
-        if   self.manager.mode == 'Solitaire':
+        if   self.manager.mode == 'SOLITAIRE':
             self.game = Game(names[:1], victory_score, card_back)
-        elif self.manager.mode == '2 Players':
+        elif self.manager.mode == '2 PLAYERS':
             self.game = Game(names[:2], victory_score, card_back)
-        elif self.manager.mode == '4 Players':
+        elif self.manager.mode == '4 PLAYERS':
             self.game = Game(names[:4], victory_score, card_back)
-        elif self.manager.mode == 'Challenge':
+        elif self.manager.mode == 'CHALLENGE':
             self.game = Game([names[0], 'Bot1'], victory_score, card_back)
 
         self.game.bind(pause_game=self.pause)
@@ -345,6 +354,9 @@ class MenuLayout(BoxLayout):
     def __init__(self, **kwargs):
         super(MenuLayout, self).__init__(**kwargs)
 
+        self.heading_font_size = 60
+        self.button_font_size  = 40
+
         self.texture = Image(source='cards/felt2.png').texture
         self.texture.wrap = 'repeat'
         self.texture.uvsize = (10,10)
@@ -377,16 +389,19 @@ class SettingsScreen(Screen):
         self.bind(on_leave=self.layout.exit_background)
 
     def make_widgets(self):
-        self.layout.add_widget(Label(text='Settings', font_size=50,
+        self.layout.add_widget(Label(text='SETTINGS',
+                                     font_size=self.layout.heading_font_size,
                                      pos_hint={'center_x':.5},
                                      size_hint=(0.9,0.9)))
-        button_names = ('Edit Names', self.popup_names), \
-                       ('Victory Score', self.popup_score), \
-                       ('Card Backs', self.popup_backs), \
-                       ('Back to Menu', self.goto_main)
+        
+        button_names = ('EDIT NAMES', self.popup_names), \
+                       ('VICTORY SCORE', self.popup_score), \
+                       ('CARDBACKS', self.popup_backs), \
+                       ('BACK TO MENU', self.goto_main)
 
         for name in button_names:
-            button = Button(text=name[0], font_size=50,
+            button = Button(text=name[0],
+                            font_size=self.layout.button_font_size,
                             pos_hint={'center_x':.5}, size_hint=(0.9,0.9))
             button.bind(on_press=name[1])
             self.layout.add_widget(button)
@@ -478,22 +493,22 @@ class MainScreen(Screen):
         self.bind(on_leave=self.layout.exit_background)
 
     def make_widgets(self):
-        title = Label(text='Griddage', font_size=50,
+        title = Label(text='GRIDDAGE', font_size=self.layout.heading_font_size,
                       pos_hint={'center_x':.5}, size_hint=(0.9,0.9))
         self.layout.add_widget(title)
         
-        button_names = ['Solitaire', '2 Players', '4 Players',
-                        'Challenge', 'Settings']
+        button_names = ['SOLITAIRE', '2 PLAYERS', '4 PLAYERS',
+                        'CHALLENGE', 'SETTINGS']
         
         for name in button_names:
-            button = Button(text=name, font_size=50, 
+            button = Button(text=name, font_size=self.layout.button_font_size, 
                             pos_hint={'center_x':.5}, size_hint=(0.9,0.9))
             button.bind(on_press=self.switch_screens)
             self.layout.add_widget(button)
         
     def switch_screens(self, button):
         self.manager.mode = button.text
-        if button.text == 'Settings':
+        if button.text == 'SETTINGS':
             self.manager.current = 'settings_screen'
         else:
             self.manager.current = 'game_screen'
