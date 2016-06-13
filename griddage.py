@@ -26,19 +26,22 @@ from card import Card, Deck, GridEntry, CardImage, Player, Game
 
 
 
+default_font = 'fonts/Chunkfive.otf'
+
+
 class Animation(Animation, GridEntry):
     pass
     
 class Button(Button):
     background_normal = ''
     background_color = [0.2, 0.65, 0.2, 0.5]
-    font_name = 'fonts/Chunkfive.otf'
+    font_name = default_font
 
 class Label(Label):
-    font_name = 'fonts/Chunkfive.otf'
+    font_name = default_font
 
 class Popup(Popup):
-    title_font = 'fonts/Chunkfive.otf'
+    title_font = default_font
     title_size = '30sp'
     title_align = 'center'
     font_size = 20
@@ -315,12 +318,12 @@ class Board(FloatLayout):
             main_button = GridButton(xpos=3, ypos=-1, text='TO MENU',
                                      font_size=self.button_font_size)
             self.add_widget(main_button)
-            main_button.bind(on_release=self.game.game_over_callback)
+            main_button.bind(on_press=self.game.game_over_callback)
         else:
             next_button = GridButton(xpos=3, ypos=-1, text='NEXT ROUND',
                                      font_size=self.button_font_size)
             self.add_widget(next_button)
-            next_button.bind(on_release=self.game.round_over_callback)
+            next_button.bind(on_press=self.game.round_over_callback)
 
             
             
@@ -356,18 +359,22 @@ class GameScreen(Screen):
                                    spacing=[10,10],
                                    padding=[10,10])
 
-        self.popup = Popup(title='Pause',
+        self.popup = Popup(title='PAUSE',
                            content=popup_layout, 
                            size_hint=(0.8,0.4))
         self.popup.open()
 
-        victory_score = self.manager.victory_score
-        victory_label = Label(text='Playing to {}'.format(victory_score),
-                              font_size=30, size_hint=(1,0.5))
-        popup_layout.add_widget(victory_label)
+        if not len(self.game.players) == 1:
+            victory_score = self.manager.victory_score
+            victory_label = Label(text='PLAYING TO {}'.format(victory_score),
+                                  font_size=self.popup.font_size,
+                                  size_hint=(1,0.5))
+            popup_layout.add_widget(victory_label)
 
-        resume_button = Button(text='Resume',
-                               font_size=30, size_hint=(1,0.5))
+        resume_button = Button(text='RESUME', font_size=self.popup.font_size,
+                               size_hint=(1,1))
+        if not len(self.game.players) == 1:
+            resume_button.size_hint=(1,0.5)
         resume_button.bind(on_press=self.popup.dismiss)
         popup_layout.add_widget(resume_button)
     
