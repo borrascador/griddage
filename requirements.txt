@@ -1,0 +1,10 @@
+Cython==0.23.4
+docutils==0.12
+Kivy==1.9.1
+Kivy-Garden==0.1.4
+kivy.deps.glew==0.1.4
+kivy.deps.sdl2==0.1.8
+pygame==1.9.2a0
+Pygments==2.0.2
+pypiwin32==219
+requests==2.9.1
